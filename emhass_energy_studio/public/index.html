@@ -27,7 +27,7 @@
       <div class="sidebar-bottom">
         <div class="mini-label">VERBINDING</div>
         <div class="connect-card"><span class="status-dot" id="sidebar-dot"></span><span id="sidebar-connection">Nog niet verbonden</span></div>
-        <div class="side-foot">Onafhankelijke, alleen-lezen viewer<br>v0.1 · geen invloed op EMHASS</div>
+        <div class="side-foot">Onafhankelijke, alleen-lezen viewer<br>v0.2.3 · geen invloed op EMHASS</div>
       </div>
     </aside>
     <main id="top">
@@ -39,7 +39,8 @@
       <div id="message" role="status" aria-live="polite" class="message hidden"></div>
       <div class="statusbar"><div class="status-copy"><span id="run-dot" class="status-dot"></span><strong id="run-status">Verbinding controleren</strong><span class="status-separator"></span><span id="run-detail">Plan ophalen...</span></div><span class="status-meta" id="status-meta">—</span></div>
       <section class="kpi-grid" aria-label="Kerncijfers">
-        <article class="kpi kpi-blue"><div class="kpi-top"><span>Verwachte netto energiekosten</span><span class="kpi-icon">€</span></div><div class="kpi-value" id="kpi-cost">—</div><div class="kpi-bottom"><span id="kpi-cost-desc">Over geselecteerde periode</span><span class="kpi-dash">↗</span></div></article>
+        <article class="kpi kpi-blue kpi-cost-today"><div class="kpi-top"><span>Netto energiekosten vandaag</span><span class="kpi-icon">€</span></div><div class="kpi-value" id="kpi-cost-today">—</div><div class="kpi-bottom"><span id="kpi-today-desc">Prognose vandaag · resterende dag</span><span class="kpi-dash">↗</span></div></article>
+        <article class="kpi kpi-amber kpi-cost-tomorrow"><div class="kpi-top"><span>Netto energiekosten morgen</span><span class="kpi-icon">€</span></div><div class="kpi-value" id="kpi-cost-tomorrow">—</div><div class="kpi-bottom"><span id="kpi-tomorrow-desc">Prognose morgen · kalenderdag</span><span class="kpi-dash">↗</span></div></article>
         <article class="kpi kpi-cyan"><div class="kpi-top"><span>PV-productie</span><span class="kpi-icon">☼</span></div><div class="kpi-value" id="kpi-pv">—</div><div class="kpi-bottom"><span>Voorspelde opbrengst</span><span class="kpi-dash">↗</span></div></article>
         <article class="kpi kpi-purple"><div class="kpi-top"><span>Netimport</span><span class="kpi-icon">⇆</span></div><div class="kpi-value" id="kpi-import">—</div><div class="kpi-bottom"><span>Bruto energie uit het net</span><span class="kpi-dash">↗</span></div></article>
         <article class="kpi kpi-lime"><div class="kpi-top"><span>Hoogste batterij-SOC</span><span class="kpi-icon">▣</span></div><div class="kpi-value" id="kpi-soc">—</div><div class="kpi-bottom"><span>In geselecteerde planning</span><span class="kpi-dash">↗</span></div></article>

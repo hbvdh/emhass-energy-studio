@@ -1,4 +1,4 @@
-import { TIMEZONE, normalizePlan, validateRun, computeStats, createDemo } from './data.js';
+import { TIMEZONE, normalizePlan, validateRun, computeStats, computeDailyCostForecasts, createDemo } from './data.js';
 
 const $ = id => document.getElementById(id);
 const formatter = new Intl.DateTimeFormat('nl-NL', { timeZone:TIMEZONE, weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZoneName:'shortOffset' });
@@ -44,9 +44,13 @@ function updateView() {
     state.selected = state.visible.length ? state.visible[Math.min(4,state.visible.length-1)].timestamp : null;
   }
   const stats=computeStats(state.visible);
-  setText('kpi-cost',eur(stats.cost)); setText('kpi-pv',stats.pv===null?'—':`${num(stats.pv,1)} kWh`);
+  const daily=computeDailyCostForecasts(state.rows);
+  setText('kpi-cost-today',eur(daily.today.cost));
+  setText('kpi-cost-tomorrow',eur(daily.tomorrow.cost));
+  setText('kpi-today-desc','Prognose vandaag · resterend'+(daily.today.partial?' · gedeeltelijk':''));
+  setText('kpi-tomorrow-desc','Prognose morgen'+(daily.tomorrow.partial?' · gedeeltelijk':' · kalenderdag')); setText('kpi-pv',stats.pv===null?'—':`${num(stats.pv,1)} kWh`);
   setText('kpi-import',stats.imp===null?'—':`${num(stats.imp,1)} kWh`); setText('kpi-soc',stats.maxSoc===null?'—':`${num(stats.maxSoc,0)} %`);
-  setText('kpi-cost-desc',`Prognose · komende ${state.hours} uur`);
+
   for(const def of chartDefs) drawChart(def);
   updateSelection(); renderTable();
 }

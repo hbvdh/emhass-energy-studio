@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {normalizePlan,validateRun,createDemo,computeStats} from '../public/data.js';
+import {normalizePlan,validateRun,createDemo,computeStats,computeDailyCostForecasts,localMidnightUtcMs} from '../public/data.js';
 
 test('demo contains 192 correctly spaced 15-minute rows',()=>{
  const {plan,run}=createDemo(new Date('2026-10-17T12:00:00Z'));
@@ -28,4 +28,31 @@ test('cost computes import and export at their own tariffs',()=>{
  {timestamp:'2026-10-17T12:15:00Z',P_PV:2000,P_grid:-1000,SOC_opt:.6,unit_load_cost:.3,unit_prod_price:.1}
  ]};
  const stats=computeStats(normalizePlan(source));assert.ok(Math.abs(stats.cost-.05)<1e-9);assert.ok(Math.abs(stats.pv-.5)<1e-9);assert.ok(Math.abs(stats.imp-.25)<1e-9);
+});
+
+test('Amsterdam calendar day split at midnight',()=>{
+ const rows=normalizePlan({status:'ok',plan:[
+  {timestamp:'2026-10-17T21:30:00Z',P_grid:1000,unit_load_cost:.20},
+  {timestamp:'2026-10-17T21:45:00Z',P_grid:2000,unit_load_cost:.20},
+  {timestamp:'2026-10-17T22:00:00Z',P_grid:1000,unit_load_cost:.40},
+  {timestamp:'2026-10-17T22:15:00Z',P_grid:-1000,unit_prod_price:.10}
+ ]});
+ const d=computeDailyCostForecasts(rows,new Date('2026-10-17T21:30:00Z'));
+ assert.ok(Math.abs(d.today.cost-.15)<1e-9);
+ assert.ok(Math.abs(d.tomorrow.cost-.075)<1e-9);
+ assert.equal(d.today.partial,false);
+ assert.equal(d.tomorrow.partial,true);
+});
+test('Missing costs return null, not misleading totals',()=>{
+ const rows=normalizePlan({status:'ok',plan:[
+  {timestamp:'2026-10-17T12:00:00Z',P_grid:1000,unit_load_cost:.40},
+  {timestamp:'2026-10-17T12:15:00Z',P_grid:1000,unit_load_cost:null}
+ ]});
+ const d=computeDailyCostForecasts(rows,new Date('2026-10-17T12:00:00Z'));
+ assert.equal(d.today.cost,null);
+ assert.equal(d.tomorrow.cost,null);
+});
+test('DST winter transition spans a 25-hour local day',()=>{
+ assert.equal(new Date(localMidnightUtcMs('2026-10-25')).toISOString(),'2026-10-24T22:00:00.000Z');
+ assert.equal(new Date(localMidnightUtcMs('2026-10-26')).toISOString(),'2026-10-25T23:00:00.000Z');
 });

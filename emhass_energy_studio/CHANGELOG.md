@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3 - Mobile layout and separate day costs
+- Mobile introductietekst verkleind.
+- Kostenprognose opgesplitst in vandaag (resterend) en morgen (kalenderdag).
+- Rekening gehouden met DST; gedeeltelijke voorspellingen krijgen een label.
+- Dagprognoses zijn onafhankelijk van de grafiekhorizon.
+
 ## 0.2.2 - Home Assistant Ingress path hotfix
 - Meervoudige openingsslashes in Ingress-requests (`//`) worden veilig genormaliseerd; hierdoor crasht de webserver niet meer met `ERR_INVALID_URL`.
 - Regressietest voor homepage, stylesheets en API via deze URL-vorm toegevoegd.

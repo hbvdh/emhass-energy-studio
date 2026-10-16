@@ -82,6 +82,61 @@ export function computeStats(rows) {
   return { cost: knownPrice ? cost : null, pv: knownPV ? pv : null, imp: knownGrid ? imp : null, maxSoc };
 }
 
+
+// Time zone aware daily boundaries; DST can make a day 23 or 25 hours.
+const amsterdamDayFormatter = new Intl.DateTimeFormat('en-GB', {
+  timeZone: TIMEZONE, year: 'numeric', month: '2-digit', day: '2-digit'
+});
+export function localDayKey(date) {
+  const p = Object.fromEntries(amsterdamDayFormatter.formatToParts(date).map(x => [x.type,x.value]));
+  return [p.year,p.month,p.day].join('-');
+}
+function nextDayKey(key) {
+  return new Date(Date.parse(key + 'T12:00:00Z') + 86400000).toISOString().slice(0,10);
+}
+export function localMidnightUtcMs(key) {
+  const nominal = Date.parse(key + 'T00:00:00Z');
+  let low = nominal - 43200000, high = nominal + 43200000;
+  while (high - low > 1) {
+    const mid = Math.floor((low + high) / 2);
+    if (localDayKey(new Date(mid)) >= key) high = mid;
+    else low = mid;
+  }
+  return high;
+}
+function forecastCostInWindow(rows,startMs,endMs) {
+  if (!rows.length || !(endMs > startMs)) return {cost:null,partial:true};
+  const stepMs = timeStepHours(rows) * 3600000;
+  let cost = 0, coveredMs = 0, invalid = false;
+  for (let i=0;i<rows.length;i++) {
+    const r = rows[i], t = r.date.getTime();
+    const interval = i < rows.length-1
+      ? Math.min(stepMs*2,Math.max(0,rows[i+1].date.getTime()-t)) : stepMs;
+    const overlap = Math.max(0,Math.min(endMs,t+interval)-Math.max(startMs,t));
+    if (!overlap) continue;
+    coveredMs += overlap;
+    if (r.P_grid === null ||
+        (r.P_grid > 0 && r.unit_load_cost === null) ||
+        (r.P_grid < 0 && r.unit_prod_price === null)) {
+      invalid = true;
+      continue;
+    }
+    cost += (Math.max(0,r.P_grid)*(r.unit_load_cost ?? 0)
+      - Math.max(0,-r.P_grid)*(r.unit_prod_price ?? 0)) / 1000 * overlap / 3600000;
+  }
+  const partial = coveredMs < (endMs-startMs) - Math.min(stepMs,MS_15M);
+  return {cost:coveredMs && !invalid ? cost : null,partial};
+}
+export function computeDailyCostForecasts(rows,now=new Date()) {
+  const today = localDayKey(now);
+  const tomorrowStart = localMidnightUtcMs(nextDayKey(today));
+  const endTomorrow = localMidnightUtcMs(nextDayKey(nextDayKey(today)));
+  return {
+    today:forecastCostInWindow(rows,now.getTime(),tomorrowStart),
+    tomorrow:forecastCostInWindow(rows,tomorrowStart,endTomorrow)
+  };
+}
+
 export function createDemo(now = new Date()) {
   const start = Math.ceil(now.getTime() / MS_15M) * MS_15M;
   let soc = 36;
