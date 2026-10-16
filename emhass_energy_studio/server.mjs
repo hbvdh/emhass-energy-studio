@@ -40,7 +40,17 @@ export function startServer({ hostname = host, listenPort = port, upstreamUrl = 
     if (ingressOnly && !['172.30.32.2', '::ffff:172.30.32.2'].includes(req.socket.remoteAddress)) {
       return json(res, 403, { error: 'Alleen toegang via Home Assistant Ingress toegestaan.' });
     }
-    const pathname = new URL(req.url || '/', 'http://localhost').pathname;
+    // Home Assistant Ingress can forward // (and //asset.js) as a request target.
+    // Normalize repeated *leading* slashes before URL parsing: a bare // is
+    // otherwise interpreted as a protocol-relative URL with no host and throws.
+    const rawPath = req.url || '/';
+    if (!rawPath.startsWith('/')) return json(res, 400, { error: 'Ongeldig verzoekpad' });
+    let pathname;
+    try {
+      pathname = new URL(rawPath.replace(/^\/+/, '/'), 'http://localhost').pathname;
+    } catch {
+      return json(res, 400, { error: 'Ongeldig verzoekpad' });
+    }
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       return json(res, 405, { error: 'Deze frontend is alleen-lezen. Alleen GET is toegestaan.' });
     }

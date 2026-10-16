@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 - Home Assistant Ingress path hotfix
+- Meervoudige openingsslashes in Ingress-requests (`//`) worden veilig genormaliseerd; hierdoor crasht de webserver niet meer met `ERR_INVALID_URL`.
+- Regressietest voor homepage, stylesheets en API via deze URL-vorm toegevoegd.
+
 ## 0.2.1 - GitHub repository release
 - Repository-installatie via Home Assistant App Store ondersteund.
 - Documentatie en onderhoudstest toegevoegd.

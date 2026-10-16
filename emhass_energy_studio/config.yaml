@@ -1,5 +1,5 @@
 name: EMHASS Energy Studio
-version: "0.2.1"
+version: "0.2.2"
 slug: emhass_energy_studio
 description: Moderne grafieken en een interactieve tabel voor bestaande EMHASS-plannen
 url: https://github.com/hbvdh/emhass-energy-studio

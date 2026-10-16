@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createServer} from 'node:http';
+import {createServer, request} from 'node:http';
 import {once} from 'node:events';
 import {startServer} from '../server.mjs';
 
@@ -31,6 +31,43 @@ test('proxy permits only read-only fixed endpoints; serves UI',async()=>{
  } finally {await new Promise(ok=>app.close(ok));await new Promise(ok=>upstream.close(ok));}
 });
 
+
+
+// node:http preserves the exact request target; fetch() may normalize // itself.
+function rawRequest(port, path) {
+  return new Promise((resolve, reject) => {
+    const req = request({hostname:'127.0.0.1',port,path,method:'GET'},res=>{
+      const parts=[];
+      res.on('data',p=>parts.push(p));
+      res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(parts).toString('utf8')}));
+    });
+    req.on('error',reject);
+    req.end();
+  });
+}
+
+test('Ingress-style double slash serves dashboard, assets and API without throwing',async()=>{
+  const upstream=createServer((req,res)=>{
+    res.writeHead(200,{'Content-Type':'application/json'});
+    res.end(JSON.stringify({status:'ok',path:req.url}));
+  });
+  upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+  const app=startServer({hostname:'127.0.0.1',listenPort:0,upstreamUrl:`http://127.0.0.1:${upstream.address().port}`});
+  await once(app,'listening');
+  try {
+    const port=app.address().port;
+    const page=await rawRequest(port,'//');
+    assert.equal(page.status,200);
+    assert.match(page.body,/EMHASS · Energy Studio/);
+    assert.equal((await rawRequest(port,'///style.css')).status,200);
+    const plan=await rawRequest(port,'//api/plan');
+    assert.equal(plan.status,200);
+    assert.equal(JSON.parse(plan.body).path,'/api/v1/plan');
+    assert.equal((await rawRequest(port,'//api/action/naive-mpc-optim')).status,404);
+    assert.equal((await rawRequest(port,'/')).status,200);
+    assert.equal((await rawRequest(port,'/https://test')).status,404);
+  } finally {await new Promise(ok=>app.close(ok));await new Promise(ok=>upstream.close(ok));}
+});
 
 test('Ingress-only HTTP listener blocks requests other than Supervisor TCP peer',async()=>{
  const app=startServer({hostname:'127.0.0.1',listenPort:0,ingressOnly:true});
