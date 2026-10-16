@@ -1,0 +1,21 @@
+name: EMHASS Energy Studio
+version: "0.2.1"
+slug: emhass_energy_studio
+description: Moderne grafieken en een interactieve tabel voor bestaande EMHASS-plannen
+url: https://github.com/hbvdh/emhass-energy-studio
+arch:
+  - amd64
+  - aarch64
+init: false
+startup: application
+boot: auto
+ingress: true
+ingress_port: 8099
+ingress_entry: /
+panel_icon: mdi:chart-areaspline
+panel_title: EMHASS Studio
+panel_admin: true
+options:
+  emhass_slug: ""
+schema:
+  emhass_slug: "str?"

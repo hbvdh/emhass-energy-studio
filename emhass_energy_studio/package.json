@@ -1,0 +1,13 @@
+{
+  "name": "emhass-modern-frontend",
+  "version": "0.2.1",
+  "private": true,
+  "type": "module",
+  "description": "Read-only lokale moderne EMHASS-frontend",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=20" },
+  "license": "MIT"
+}

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="Moderne alleen-lezen EMHASS-planning met interactieve grafieken en gekoppelde tijdstiptabel.">
+  <title>EMHASS · Energy Studio</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <a class="brand" href="#top" aria-label="Energy Studio beginpagina">
+        <span class="brand-symbol"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M19 3 7 17h9l-3 12 12-16h-9l3-10Z" fill="currentColor"/></svg></span>
+        <span><strong>EMHASS</strong><small>ENERGY STUDIO</small></span>
+      </a>
+      <div class="sidebar-label">WORKSPACE</div>
+      <nav aria-label="Navigatie">
+        <a href="#overview" class="nav-link active"><span class="nav-glyph">▦</span>Overzicht</a>
+        <a href="#energy" class="nav-link"><span class="nav-glyph">〽</span>Energieplanning</a>
+        <a href="#battery" class="nav-link"><span class="nav-glyph">▤</span>Batterij & prijzen</a>
+        <a href="#dataset" class="nav-link"><span class="nav-glyph">≡</span>Datatabel</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="mini-label">VERBINDING</div>
+        <div class="connect-card"><span class="status-dot" id="sidebar-dot"></span><span id="sidebar-connection">Nog niet verbonden</span></div>
+        <div class="side-foot">Onafhankelijke, alleen-lezen viewer<br>v0.1 · geen invloed op EMHASS</div>
+      </div>
+    </aside>
+    <main id="top">
+      <div class="topline"><span class="breadcrumb">Workspace <span class="slash">/</span> <strong>Optimisatieoverzicht</strong></span><div class="top-right"><span id="clock" class="top-clock"></span><button id="theme" class="icon-button" aria-label="Wissel thema" title="Wissel licht/donker">◐</button></div></div>
+      <section id="overview" class="intro">
+        <div><div class="eyebrow"><span class="eyebrow-line"></span> ENERGY INTELLIGENCE <span class="eyebrow-dot">✦</span> DASHBOARD</div><h1>Grip op de energie<br><span>van morgen.</span></h1><p>Jouw complete EMHASS-optimalisatie, helder in beeld. Van batterijlading tot het slimste moment om energie af te nemen.</p></div>
+        <div class="intro-actions"><div class="mode-switch" role="group" aria-label="Databron"><button id="live-mode" class="mode active">● Live</button><button id="demo-mode" class="mode">○ Demo</button></div><button id="reload" class="refresh-btn"><span id="refresh-icon">↻</span> Vernieuwen</button></div>
+      </section>
+      <div id="message" role="status" aria-live="polite" class="message hidden"></div>
+      <div class="statusbar"><div class="status-copy"><span id="run-dot" class="status-dot"></span><strong id="run-status">Verbinding controleren</strong><span class="status-separator"></span><span id="run-detail">Plan ophalen...</span></div><span class="status-meta" id="status-meta">—</span></div>
+      <section class="kpi-grid" aria-label="Kerncijfers">
+        <article class="kpi kpi-blue"><div class="kpi-top"><span>Verwachte netto energiekosten</span><span class="kpi-icon">€</span></div><div class="kpi-value" id="kpi-cost">—</div><div class="kpi-bottom"><span id="kpi-cost-desc">Over geselecteerde periode</span><span class="kpi-dash">↗</span></div></article>
+        <article class="kpi kpi-cyan"><div class="kpi-top"><span>PV-productie</span><span class="kpi-icon">☼</span></div><div class="kpi-value" id="kpi-pv">—</div><div class="kpi-bottom"><span>Voorspelde opbrengst</span><span class="kpi-dash">↗</span></div></article>
+        <article class="kpi kpi-purple"><div class="kpi-top"><span>Netimport</span><span class="kpi-icon">⇆</span></div><div class="kpi-value" id="kpi-import">—</div><div class="kpi-bottom"><span>Bruto energie uit het net</span><span class="kpi-dash">↗</span></div></article>
+        <article class="kpi kpi-lime"><div class="kpi-top"><span>Hoogste batterij-SOC</span><span class="kpi-icon">▣</span></div><div class="kpi-value" id="kpi-soc">—</div><div class="kpi-bottom"><span>In geselecteerde planning</span><span class="kpi-dash">↗</span></div></article>
+      </section>
+      <div class="workspace-header" id="energy"><div><div class="section-eyebrow">PLANNING ANALYTICS</div><h2>Energiestromen & optimalisatie</h2><p>Beweeg over een grafiek of selecteer een kwartier voor de exacte waarden.</p></div><div class="time-switch" role="group" aria-label="Tijdshorizon"><button data-hours="12">12 uur</button><button data-hours="24">24 uur</button><button data-hours="48" class="active">48 uur</button></div></div>
+      <div class="charts-grid">
+        <section class="panel chart-panel wide"><div class="panel-head"><div><h3>Verbruik, opwek & net</h3><p>Vermogensplanning · kW</p></div><div class="legend" id="legend-energy"><button data-series="P_Load" class="series-toggle selected"><i style="--c:#9b90ff"></i>Verbruik</button><button data-series="P_PV" class="series-toggle selected"><i style="--c:#29dac5"></i>Zon</button><button data-series="P_grid" class="series-toggle selected"><i style="--c:#f7b86d"></i>Net</button></div></div><div class="chart" id="chart-energy"></div><div class="chart-hint">Positief netvermogen = import · negatief = export</div></section>
+        <section class="panel chart-panel" id="battery"><div class="panel-head"><div><h3>Batterijvermogen</h3><p>Ontladen (+) / laden (−) · kW</p></div><span class="panel-icon violet">↯</span></div><div class="chart" id="chart-battery"></div><div class="chart-hint">Onder de nullijn wordt de batterij geladen</div></section>
+        <section class="panel chart-panel"><div class="panel-head"><div><h3>Batterijvulling</h3><p>Geplande State of Charge · %</p></div><span class="panel-icon green">▰</span></div><div class="chart" id="chart-soc"></div><div class="chart-hint">SOC is omgerekend naar procenten</div></section>
+        <section class="panel chart-panel wide"><div class="panel-head"><div><h3>Dynamische energieprijzen</h3><p>Tariefplanning · € per kWh</p></div><div class="legend"><span><i style="--c:#f3c56a"></i>Afname</span><span><i style="--c:#42b6f6"></i>Teruglevering</span></div></div><div class="chart short" id="chart-price"></div><div class="chart-hint">Tarieven volgens EMHASS; de werkelijke all-in prijs hangt af van de aangeleverde bron</div></section>
+      </div>
+      <section class="selection-bar" aria-label="Geselecteerd tijdstip"><div class="selected-first"><div class="mini-label">GESELECTEERD KWARTIER</div><strong id="sel-datetime">—</strong></div><div class="selection-value"><small>PV</small><strong id="sel-pv">—</strong></div><div class="selection-value"><small>Verbruik</small><strong id="sel-load">—</strong></div><div class="selection-value"><small>Batterij</small><strong id="sel-battery">—</strong></div><div class="selection-value"><small>Net</small><strong id="sel-grid">—</strong></div><div class="selection-value"><small>SOC</small><strong id="sel-soc">—</strong></div></section>
+      <section id="dataset" class="panel data-panel"><div class="data-heading"><div><div class="section-eyebrow">RAW DATA / 15-MINUTE VIEW</div><h2>Kwartierwaarden</h2><p>Geen eindeloze lijst: filter, selecteer en exporteer de exacte planning.</p></div><button class="export-btn" id="export"><span>↓</span> CSV exporteren</button></div><div class="table-filters"><div class="filter-pills" role="group" aria-label="Filter op energiestroom"><button class="active" data-filter="all">Alle kwartieren</button><button data-filter="charge">Laden</button><button data-filter="discharge">Ontladen</button><button data-filter="import">Netimport</button><button data-filter="export">Terugleveren</button></div><label class="table-search"><span aria-hidden="true">⌕</span><input id="table-search" type="search" placeholder="Zoek datum / tijd..." aria-label="Zoek tijdstip"></label></div><div class="table-scroll"><table><thead><tr><th><button id="sort-time">Tijdstip ↕</button></th><th>PV</th><th>Verbruik</th><th>Batterij</th><th>SOC</th><th>Net</th><th>Afnameprijs</th><th>Terugleverprijs</th></tr></thead><tbody id="table-body"><tr><td colspan="8">Gegevens laden...</td></tr></tbody></table></div><div class="table-footer"><span id="table-count">—</span><div class="pager"><button id="page-prev" aria-label="Vorige pagina">←</button><span id="page-label">—</span><button id="page-next" aria-label="Volgende pagina">→</button></div></div></section>
+      <footer><span>ENERGY STUDIO <span class="footer-dot">·</span> made for better decisions</span><span>Read-only · EMHASS schema 1.x · lokale tijd Europe/Amsterdam</span></footer>
+    </main>
+  </div>
+  <div class="tooltip" id="tooltip" hidden></div>
+</body>
+</html>
