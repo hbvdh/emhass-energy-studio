@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4 - Mobile chart tooltip
+- Mobiele tooltip blijft na tikken staan; sluiten via kruisje of tik buiten de grafiek.
+- Geen verdwijnend venster na touch-pointerleave; muis-hover ongewijzigd.
+- Mobiele tooltip blijft binnen de schermbreedte.
+
 ## 0.2.3 - Mobile layout and separate day costs
 - Mobile introductietekst verkleind.
 - Kostenprognose opgesplitst in vandaag (resterend) en morgen (kalenderdag).

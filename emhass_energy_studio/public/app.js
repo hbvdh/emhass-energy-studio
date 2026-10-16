@@ -9,7 +9,7 @@ const eur = n => n === null ? '—' : new Intl.NumberFormat('nl-NL',{style:'curr
 const fmtPower = n => n === null ? '—' : `${num(n/1000,2)} kW`;
 const fmtPrice = n => n === null ? '—' : `${num(n,3)} €`;
 
-const state = { mode:'live', plan:null, run:null, rows:[], visible:[], selected:null, hovered:null, hours:48, filter:'all',query:'',page:0,sortAsc:true,disabledSeries:new Set(), warnings:[], loading:false };
+const state = { mode:'live', plan:null, run:null, rows:[], visible:[], selected:null, hovered:null, tooltipPinned:false, hours:48, filter:'all',query:'',page:0,sortAsc:true,disabledSeries:new Set(), warnings:[], loading:false };
 const PAGE_SIZE=14;
 const chartDefs=[
   {id:'chart-energy',kind:'energy',series:[{field:'P_Load',label:'Verbruik',color:'#9b90ff'},{field:'P_PV',label:'PV',color:'#29dac5',area:true},{field:'P_grid',label:'Net',color:'#f7b86d'}]},
@@ -39,6 +39,7 @@ function getVisibleRows() {
   return result;
 }
 function updateView() {
+  hideTooltip();
   state.visible=getVisibleRows();
   if (state.selected===null || !state.visible.some(r=>r.timestamp===state.selected)) {
     state.selected = state.visible.length ? state.visible[Math.min(4,state.visible.length-1)].timestamp : null;
@@ -122,20 +123,35 @@ function drawChart(def) {
   el.innerHTML=pieces.join('');
   el._chart={X,Y,enabled,rows,kind:def.kind,L,R,W};
   const overlay=el.querySelector('.chart-overlay');
+  function rowAtPointer(e){
+    const r=el.querySelector('svg').getBoundingClientRect();
+    const pointer=(e.clientX-r.left)/r.width*W;
+    const index=Math.max(0,Math.min(rows.length-1,Math.round((pointer-L)/(W-L-R)*(rows.length-1))));
+    return rows[index];
+  }
+  function selectQuarter(e,pinned){
+    const row=rowAtPointer(e);
+    state.selected=row.timestamp;
+    state.hovered=null;
+    updateSelection();
+    if(pinned)showTooltip(e,row,true);
+  }
   overlay.addEventListener('pointermove',e=>{
-    const r=el.querySelector('svg').getBoundingClientRect();
-    const pointer=(e.clientX-r.left)/r.width*W;
-    const index=Math.max(0,Math.min(rows.length-1,Math.round((pointer-L)/(W-L-R)*(rows.length-1))));
-    state.hovered=rows[index].timestamp;
-    for(const chart of chartDefs) updateGuide(chart);
-    showTooltip(e,rows[index]);
+    if(e.pointerType!=='mouse'||state.tooltipPinned)return;
+    const row=rowAtPointer(e);
+    state.hovered=row.timestamp;
+    for(const chart of chartDefs)updateGuide(chart);
+    showTooltip(e,row);
   });
-  overlay.addEventListener('pointerleave',()=>{state.hovered=null;$('tooltip').hidden=true;chartDefs.forEach(updateGuide);});
+  overlay.addEventListener('pointerleave',e=>{
+    if(e.pointerType!=='mouse'||state.tooltipPinned)return;
+    state.hovered=null;$('tooltip').hidden=true;chartDefs.forEach(updateGuide);
+  });
+  overlay.addEventListener('pointerup',e=>{
+    if(e.pointerType==='touch'||e.pointerType==='pen')selectQuarter(e,true);
+  });
   overlay.addEventListener('click',e=>{
-    const r=el.querySelector('svg').getBoundingClientRect();
-    const pointer=(e.clientX-r.left)/r.width*W;
-    const index=Math.max(0,Math.min(rows.length-1,Math.round((pointer-L)/(W-L-R)*(rows.length-1))));
-    state.selected=rows[index].timestamp;updateSelection();
+    selectQuarter(e,e.pointerType==='touch'||e.pointerType==='pen'||matchMedia('(hover: none)').matches);
   });
   updateGuide(def);
 }
@@ -149,11 +165,16 @@ function updateGuide(def) {
   const dots=guide.querySelector('.chart-dots');dots.replaceChildren();
   for(const s of cfg.enabled){const v=transform(cfg.rows[i][s.field],cfg.kind);if(v===null)continue;const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');circle.setAttribute('cx',x);circle.setAttribute('cy',safe(cfg.Y(v)));circle.setAttribute('r','5');circle.setAttribute('fill',s.color);circle.setAttribute('class','marker');dots.append(circle);}
 }
-function showTooltip(e,row) {
+function hideTooltip(){
+  state.tooltipPinned=false;state.hovered=null;
+  const box=$('tooltip');box.hidden=true;box.classList.remove('pinned');
+}
+function showTooltip(e,row,pinned=false) {
   const items=[['PV',fmtPower(row.P_PV)],['Verbruik',fmtPower(row.P_Load)],['Batterij',fmtPower(row.P_batt)],['Net',fmtPower(row.P_grid)],['SOC',row.SOC_opt===null?'—':`${num(row.SOC_opt,1)} %`],['Inkoop',fmtPrice(row.unit_load_cost)]];
-  const box=$('tooltip');box.replaceChildren();const title=document.createElement('strong');title.textContent=formatter.format(row.date);box.append(title);
+  const box=$('tooltip');state.tooltipPinned=pinned;box.classList.toggle('pinned',pinned);box.replaceChildren();const title=document.createElement('strong');title.textContent=formatter.format(row.date);box.append(title);
+  if(pinned){const close=document.createElement('button');close.type='button';close.className='tooltip-close';close.textContent='×';close.setAttribute('aria-label','Sluit kwartierdetails');close.addEventListener('click',hideTooltip);box.append(close);}
   for(const [label,value] of items){const line=document.createElement('div');line.className='tooltip-line';const l=document.createElement('em'),v=document.createElement('b');l.textContent=label;v.textContent=value;line.append(l,v);box.append(line);}
-  box.hidden=false;box.style.left=`${Math.min(window.innerWidth-280,e.clientX+18)}px`;box.style.top=`${Math.min(window.innerHeight-205,e.clientY+14)}px`;
+  box.hidden=false;if(pinned){box.style.left='';box.style.top='';}else{box.style.left=`${Math.max(8,Math.min(window.innerWidth-270,e.clientX+18))}px`;box.style.top=`${Math.max(8,Math.min(window.innerHeight-205,e.clientY+14))}px`;}
 }
 function getFilteredRows(){
   const q=state.query.toLowerCase().trim();
@@ -219,6 +240,7 @@ function loadDemo(){
 }
 function setMode(mode){state.mode=mode;state.hovered=null;state.selected=null;state.page=0;updateModes();if(mode==='demo')loadDemo();else{state.rows=[];updateView();loadLive();}}
 function attachEvents(){
+  document.addEventListener('pointerdown',e=>{if(state.tooltipPinned&&!e.target.closest('.chart-overlay')&&!e.target.closest('#tooltip'))hideTooltip();});
   $('theme').addEventListener('click',()=>{const html=document.documentElement;const now=html.dataset.theme==='light'?'dark':'light';html.dataset.theme=now;try{localStorage.setItem('emhass-theme',now);}catch{}});
   $('reload').addEventListener('click',()=>state.mode==='demo'?loadDemo():loadLive());
   $('live-mode').addEventListener('click',()=>setMode('live')); $('demo-mode').addEventListener('click',()=>setMode('demo'));

@@ -22,3 +22,10 @@ main{min-width:0;padding:0 clamp(22px,3.65vw,65px);max-width:1800px;width:100%;m
  .intro-actions{padding-top:17px}
 }
 @media(max-width:380px){.kpi-grid{grid-template-columns:minmax(0,1fr)}.intro h1{font-size:23px}}
+
+/* v0.2.4 - stable touch tooltip with unchanged mouse hover */
+.tooltip.pinned{pointer-events:auto;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom, 0px));top:auto;width:auto;max-width:330px;padding-right:34px;z-index:100}
+.tooltip.pinned strong{padding-right:10px}
+.tooltip-close{position:absolute;top:7px;right:7px;display:grid;place-items:center;border:1px solid #365265;color:#e3eef8;background:#1b2c40;width:28px;height:28px;border-radius:7px;font-size:20px;line-height:1;cursor:pointer}
+.tooltip-close:focus-visible{outline:2px solid #48dfce;outline-offset:2px}
+@media(max-width:760px), (pointer:coarse){.tooltip.pinned{max-width:none;left:12px;right:12px}}
