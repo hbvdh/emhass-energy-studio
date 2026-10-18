@@ -1,6 +1,6 @@
 # EMHASS Energy Studio
 
-Een modern, lokaal **read-only** resultaten-dashboard voor de bestaande EMHASS Home Assistant-app.
+A modern, local / Een modern, lokaal **read-only** resultaten-dashboard voor de bestaande EMHASS Home Assistant-app.
 
 - Interactieve grafieken voor batterij, SOC, PV/verbruik en net/stroomprijzen.
 - Dagprognoses: netto energiekosten voor resterend vandaag en morgen, volgens lokale Nederlandse kalenderdagen (ongeacht de 12/24/48-uurs grafiekselectie).
@@ -41,3 +41,9 @@ npm test
 De Node.js-webserver heeft geen externe npm-afhankelijkheden. De app is op gesimuleerde API-antwoorden getest, **nog niet op een echte Home Assistant-installatie**.
 
 Dit is onofficiële, experimentele community-software; niet onderdeel van het EMHASS-project. Licentie: MIT.
+
+## Language / Taal
+
+The dashboard uses your Home Assistant account language when accessible from Ingress. Otherwise it uses the browser language. Dutch (`nl`) and English (`en`) are supported; other languages fall back to English. Reload after changing your HA profile language. There is no global language setting.
+
+Het dashboard gebruikt waar mogelijk de taal van jouw Home Assistant-gebruiker. Anders gebruikt het de browsertaal. Nederlands (`nl`) en Engels (`en`) worden ondersteund; overige talen vallen terug op Engels. Herlaad na het aanpassen van je HA-profieltaal.

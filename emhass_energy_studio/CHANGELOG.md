@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 - English / Dutch user language
+- Two complete UI translations: English and Dutch (charts, labels, tooltips, statuses, warnings, CSV, times, currency).
+- Automatic per-user language detection: Home Assistant iframe parent language first when accessible, browser language otherwise.
+- Unsupported languages fall back to English; no language toggle or global add-on setting.
+- Only localization changed; optimization and add-on API remain read-only.
+
+
 ## 0.2.5 - Dashboard preferences
 - Standaard horizon bij openen gewijzigd naar 24 uur; 12 en 48 uur blijven selecteerbaar.
 - Aantal zichtbare kwartierregels per tabelpagina verdubbeld van 14 naar 28 (ook mobiel).

@@ -86,6 +86,6 @@ test('dashboard opens at 24 hours and table displays 28 quarters per page',()=>{
   const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
   assert.match(app,/\bhours:24, filter:/);
   assert.match(app,/const PAGE_SIZE=28;/);
-  assert.match(html,/<button data-hours="24" class="active">24 uur<\/button>/);
-  assert.match(html,/<button data-hours="48">48 uur<\/button>/);
+  assert.match(html,/<button[^>]*class="active"[^>]*data-hours="24"[^>]*>24 uur<\/button>/);
+  assert.match(html,/<button[^>]*data-hours="48"[^>]*>48 uur<\/button>/);
 });

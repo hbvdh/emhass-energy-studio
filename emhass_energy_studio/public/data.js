@@ -1,4 +1,6 @@
 // Official EMHASS schema 1.x fields; no Home Assistant state attributes required.
+import { t } from './i18n.js';
+
 export const TIMEZONE = 'Europe/Amsterdam';
 export const MS_15M = 15 * 60 * 1000;
 const METRICS = ['P_Load','P_PV','P_batt','P_grid','SOC_opt','unit_load_cost','unit_prod_price'];
@@ -9,12 +11,12 @@ export function finiteNumber(input) {
   return Number.isFinite(n) ? n : null;
 }
 
-export function normalizePlan(source) {
+export function normalizePlan(source, language = 'nl') {
   if (!source || typeof source !== 'object' || source.status !== 'ok' || !Array.isArray(source.plan)) {
-    throw new Error('Er is nog geen bruikbaar optimalisatieplan beschikbaar.');
+    throw new Error(t(language,'normalize.none'));
   }
   const schema = source.emhass_schema_version;
-  if (schema && String(schema).split('.')[0] !== '1') throw new Error(`Onbekend plan-schema ${schema}; schema 1.x is vereist.`);
+  if (schema && String(schema).split('.')[0] !== '1') throw new Error(t(language,'normalize.schema',{schema}));
   const parsed = source.plan.map(entry => {
     if (!entry || typeof entry !== 'object') return null;
     const date = new Date(entry.timestamp);
@@ -26,28 +28,28 @@ export function normalizePlan(source) {
     return row;
   }).filter(Boolean).sort((a,b) => a.date - b.date);
   const rows = parsed.filter((r,i) => i === 0 || r.date.getTime() !== parsed[i-1].date.getTime());
-  if (!rows.length) throw new Error('Het optimalisatieplan bevat geen geldige tijdstippen.');
+  if (!rows.length) throw new Error(t(language,'normalize.empty'));
   return rows;
 }
 
-export function validateRun(plan, run, now = new Date()) {
+export function validateRun(plan, run, now = new Date(), language = 'nl') {
   const warnings = [];
-  if (!run || run.status === 'no-run') warnings.push('Geen uitvoeringsstatus beschikbaar.');
-  else if (run.status !== 'ok') warnings.push(`Laatste optimalisatie: ${run.status}${run.error_message ? ' (zie EMHASS-log)' : ''}. Het plan kan van een eerdere, geslaagde uitvoering zijn.`);
-  if (run?.infeasible) warnings.push('De laatste optimalisatie was niet uitvoerbaar.');
+  if (!run || run.status === 'no-run') warnings.push(t(language,'validate.noRun'));
+  else if (run.status !== 'ok') warnings.push(t(language,'validate.failed',{status:run.status,suffix:run.error_message?t(language,'validate.logSuffix'):''}));
+  if (run?.infeasible) warnings.push(t(language,'validate.infeasible'));
   const generated = new Date(plan.generated_at);
-  if (!plan.generated_at || !Number.isFinite(generated.getTime())) warnings.push('Tijdstip van het plan ontbreekt.');
+  if (!plan.generated_at || !Number.isFinite(generated.getTime())) warnings.push(t(language,'validate.noTimestamp'));
   else {
     const ageMin = (now - generated) / 60000;
-    if (ageMin > 35) warnings.push(`Plan is ${Math.round(ageMin)} minuten oud (verwacht elke 15 minuten).`);
-    if (ageMin < -5) warnings.push('Het plantijdstip ligt in de toekomst; controleer de systeemtijd.');
+    if (ageMin > 35) warnings.push(t(language,'validate.stale',{minutes:Math.round(ageMin)}));
+    if (ageMin < -5) warnings.push(t(language,'validate.future'));
   }
   if (run?.status === 'ok' && run.timestamp && plan.generated_at) {
     const diff = Math.abs(new Date(run.timestamp).getTime() - generated.getTime());
-    if (!Number.isFinite(diff) || diff > 3000) warnings.push('Laatste run en plan hebben verschillende generatietijden.');
+    if (!Number.isFinite(diff) || diff > 3000) warnings.push(t(language,'validate.timestampMismatch'));
   }
   if (run?.schema_version && plan.emhass_schema_version && run.schema_version !== plan.emhass_schema_version) {
-    warnings.push('Plan-schema wijkt af van het schema van de laatste run.');
+    warnings.push(t(language,'validate.schemaMismatch'));
   }
   return warnings;
 }

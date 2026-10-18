@@ -1,21 +1,29 @@
 import { TIMEZONE, normalizePlan, validateRun, computeStats, computeDailyCostForecasts, createDemo } from './data.js';
+import { detectLanguage, normalizeLanguageTag, t, translateStatic } from './i18n.js';
 
 const $ = id => document.getElementById(id);
-const formatter = new Intl.DateTimeFormat('nl-NL', { timeZone:TIMEZONE, weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZoneName:'shortOffset' });
-const shortDate = new Intl.DateTimeFormat('nl-NL', { timeZone:TIMEZONE, day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit' });
-const axisDate = new Intl.DateTimeFormat('nl-NL', { timeZone:TIMEZONE,day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit' });
-const num = (n,d=1) => n === null || n === undefined || !Number.isFinite(n) ? '—' : new Intl.NumberFormat('nl-NL',{minimumFractionDigits:d,maximumFractionDigits:d}).format(n);
-const eur = n => n === null ? '—' : new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+let language = 'nl';
+let appliedLanguage = null;
+let formatter, shortDate, axisDate;
+const translation = (key, values) => t(language, key, values);
+function configureFormatters() {
+  const locale = language === 'nl' ? 'nl-NL' : 'en-GB';
+  formatter = new Intl.DateTimeFormat(locale, { timeZone:TIMEZONE, weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZoneName:'shortOffset' });
+  shortDate = new Intl.DateTimeFormat(locale, { timeZone:TIMEZONE, day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit' });
+  axisDate = new Intl.DateTimeFormat(locale, { timeZone:TIMEZONE,day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit' });
+}
+const num = (n,d=1) => n === null || n === undefined || !Number.isFinite(n) ? '—' : new Intl.NumberFormat(language === 'nl' ? 'nl-NL' : 'en-GB',{minimumFractionDigits:d,maximumFractionDigits:d}).format(n);
+const eur = n => n === null ? '—' : new Intl.NumberFormat(language === 'nl' ? 'nl-NL' : 'en-GB',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
 const fmtPower = n => n === null ? '—' : `${num(n/1000,2)} kW`;
 const fmtPrice = n => n === null ? '—' : `${num(n,3)} €`;
 
 const state = { mode:'live', plan:null, run:null, rows:[], visible:[], selected:null, hovered:null, tooltipPinned:false, hours:24, filter:'all',query:'',page:0,sortAsc:true,disabledSeries:new Set(), warnings:[], loading:false };
 const PAGE_SIZE=28;
 const chartDefs=[
-  {id:'chart-energy',kind:'energy',series:[{field:'P_Load',label:'Verbruik',color:'#9b90ff'},{field:'P_PV',label:'PV',color:'#29dac5',area:true},{field:'P_grid',label:'Net',color:'#f7b86d'}]},
-  {id:'chart-battery',kind:'battery',series:[{field:'P_batt',label:'Batterij',color:'#9b90ff',area:true}]},
+  {id:'chart-energy',kind:'energy',series:[{field:'P_Load',label:'field.load',color:'#9b90ff'},{field:'P_PV',label:'PV',color:'#29dac5',area:true},{field:'P_grid',label:'field.grid',color:'#f7b86d'}]},
+  {id:'chart-battery',kind:'battery',series:[{field:'P_batt',label:'field.battery',color:'#9b90ff',area:true}]},
   {id:'chart-soc',kind:'soc',series:[{field:'SOC_opt',label:'SOC',color:'#68d9ba',area:true}]},
-  {id:'chart-price',kind:'price',series:[{field:'unit_load_cost',label:'Afname',color:'#f3c56a'},{field:'unit_prod_price',label:'Teruglevering',color:'#42b6f6'}]},
+  {id:'chart-price',kind:'price',series:[{field:'unit_load_cost',label:'field.buy',color:'#f3c56a'},{field:'unit_prod_price',label:'field.sell',color:'#42b6f6'}]},
 ];
 
 function setText(id, value) { $(id).textContent=String(value); }
@@ -23,7 +31,7 @@ function showMessage(message) { $('message').textContent=message; $('message').c
 function status(color,label,detail) {
   for (const id of ['run-dot','sidebar-dot']) $(id).className=`status-dot ${color}`;
   setText('run-status',label); setText('run-detail',detail);
-  setText('sidebar-connection',state.mode==='demo'?'Demo (geen live data)':color==='good'?'Verbonden met EMHASS':color==='bad'?'Probleem met EMHASS':'Waarschuwing');
+  setText('sidebar-connection',state.mode==='demo'?translation('status.demoConnection'):color==='good'?translation('status.connected'):color==='bad'?translation('status.problem'):translation('status.warning'));
 }
 function updateModes() {
   $('live-mode').classList.toggle('active',state.mode==='live'); $('demo-mode').classList.toggle('active',state.mode==='demo');
@@ -49,8 +57,8 @@ function updateView() {
   const daily = computeDailyCostForecasts(state.rows);
   setText('kpi-cost-today',eur(daily.today.cost));
   setText('kpi-cost-tomorrow',eur(daily.tomorrow.cost));
-  setText('kpi-today-desc',`Prognose vandaag · resterend${daily.today.partial ? ' · gedeeltelijk' : ''}`);
-  setText('kpi-tomorrow-desc',`Prognose morgen${daily.tomorrow.partial ? ' · gedeeltelijk' : ' · kalenderdag'}`);
+  setText('kpi-today-desc',translation(daily.today.partial ? 'cost.today.partial' : 'cost.today.full'));
+  setText('kpi-tomorrow-desc',translation(daily.tomorrow.partial ? 'cost.tomorrow.partial' : 'cost.tomorrow.full'));
   setText('kpi-pv',stats.pv===null?'—':`${num(stats.pv,1)} kWh`);
   setText('kpi-import',stats.imp===null?'—':`${num(stats.imp,1)} kWh`); setText('kpi-soc',stats.maxSoc===null?'—':`${num(stats.maxSoc,0)} %`);
 
@@ -82,7 +90,7 @@ function drawChart(def) {
   el.innerHTML='';
   if(!rows.length) {
     const msg=document.createElement('div');msg.style.cssText='height:100%;display:grid;place-items:center;color:var(--muted);font-size:12px;';
-    msg.textContent='Geen plangegevens om weer te geven';el.append(msg);return;
+    msg.textContent=translation('chart.empty');el.append(msg);return;
   }
   const enabled=def.series.filter(s=>!state.disabledSeries.has(s.field));
   const available=enabled.flatMap(s=>rows.map(r=>transform(r[s.field],def.kind)).filter(v=>v!==null));
@@ -96,7 +104,7 @@ function drawChart(def) {
   const X=i=>L+(rows.length<2?graphWidth/2:i/(rows.length-1)*graphWidth);
   const Y=v=>T+(max-v)/(max-min)*graphHeight;
   const escapedId=def.id.replace(/[^a-zA-Z0-9-]/g,'');
-  const pieces=[`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${def.kind} planninggrafiek">`, '<defs>'];
+  const pieces=[`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${translation('chart.aria')}">`, '<defs>'];
   for(const s of enabled) pieces.push(`<linearGradient id="fill-${escapedId}-${s.field}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${s.color}" stop-opacity=".18"/><stop offset="100%" stop-color="${s.color}" stop-opacity="0"/></linearGradient>`);
   pieces.push('</defs>');
   for(let k=0;k<=4;k++){
@@ -181,7 +189,7 @@ function hideTooltip() {
   box.classList.remove('pinned');
 }
 function showTooltip(e,row,pinned=false) {
-  const items=[['PV',fmtPower(row.P_PV)],['Verbruik',fmtPower(row.P_Load)],['Batterij',fmtPower(row.P_batt)],['Net',fmtPower(row.P_grid)],['SOC',row.SOC_opt===null?'—':`${num(row.SOC_opt,1)} %`],['Inkoop',fmtPrice(row.unit_load_cost)]];
+  const items=[['PV',fmtPower(row.P_PV)],[translation('field.load'),fmtPower(row.P_Load)],[translation('field.battery'),fmtPower(row.P_batt)],[translation('field.grid'),fmtPower(row.P_grid)],['SOC',row.SOC_opt===null?'—':`${num(row.SOC_opt,1)} %`],[translation('field.buy'),fmtPrice(row.unit_load_cost)]];
   const box=$('tooltip');
   state.tooltipPinned=pinned;
   box.classList.toggle('pinned',pinned);
@@ -189,7 +197,7 @@ function showTooltip(e,row,pinned=false) {
   const title=document.createElement('strong');title.textContent=formatter.format(row.date);box.append(title);
   if(pinned){
     const close=document.createElement('button');
-    close.type='button';close.className='tooltip-close';close.textContent='×';close.setAttribute('aria-label','Sluit kwartierdetails');
+    close.type='button';close.className='tooltip-close';close.textContent='×';close.setAttribute('aria-label',translation('tooltip.close'));
     close.addEventListener('click',hideTooltip);box.append(close);
   }
   for(const [label,value] of items){const line=document.createElement('div');line.className='tooltip-line';const l=document.createElement('em'),v=document.createElement('b');l.textContent=label;v.textContent=value;line.append(l,v);box.append(line);}
@@ -221,15 +229,15 @@ function renderTable(){
     tr.addEventListener('click',()=>{state.selected=row.timestamp;updateSelection();window.scrollTo({top:document.querySelector('#energy').getBoundingClientRect().top+window.scrollY-22,behavior:'smooth'});});
     body.append(tr);
   }
-  if(!part.length){const tr=document.createElement('tr'),td=tableCell('Geen kwartieren voor deze selectie.');td.colSpan=8;td.style.textAlign='center';tr.append(td);body.append(tr);}
-  setText('table-count',`${rows.length} van ${state.visible.length} kwartieren · ${state.hours} uur geselecteerd`);
+  if(!part.length){const tr=document.createElement('tr'),td=tableCell(translation('table.empty'));td.colSpan=8;td.style.textAlign='center';tr.append(td);body.append(tr);}
+  setText('table-count',translation('table.count',{count:rows.length,total:state.visible.length,hours:state.hours}));
   setText('page-label',`${state.page+1} / ${maxPage+1}`);
   $('page-prev').disabled=state.page===0; $('page-next').disabled=state.page>=maxPage;
-  setText('sort-time',state.sortAsc?'Tijdstip ↓':'Tijdstip ↑');
+  setText('sort-time',translation(state.sortAsc?'table.sortAsc':'table.sortDesc'));
 }
 function exportCsv(){
   const rows=getFilteredRows();if(!rows.length)return;
-  const headings=['Tijdstip UTC','Tijdstip lokaal','PV W','Verbruik W','Batterij W','SOC %','Net W','Afname EUR/kWh','Teruglevering EUR/kWh'];
+  const headings=['csv.utc','csv.local','csv.pv','csv.load','csv.batt','csv.soc','csv.grid','csv.buy','csv.sell'].map(key=>translation(key));
   const cell=x=>x===null||x===undefined?'':String(x).replaceAll('.',',');
   const lines=[headings.join(';'),...rows.map(r=>[r.timestamp,shortDate.format(r.date),r.P_PV,r.P_Load,r.P_batt,r.SOC_opt,r.P_grid,r.unit_load_cost,r.unit_prod_price].map(cell).join(';'))];
   const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`emhass-plan-${new Date().toISOString().slice(0,10)}.csv`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -241,28 +249,28 @@ async function loadLive(){
     const [planRes,runRes]=await Promise.allSettled([fetchJson('./api/plan'),fetchJson('./api/last-run')]);
     if(planRes.status==='rejected')throw planRes.reason;
     const plan=planRes.value,run=runRes.status==='fulfilled'?runRes.value:null;
-    const rows=normalizePlan(plan);
-    state.plan=plan;state.run=run;state.rows=rows;state.warnings=validateRun(plan,run);
-    if(runRes.status==='rejected')state.warnings.push('Run-status kon niet worden opgehaald.');
+    const rows=normalizePlan(plan,language);
+    state.plan=plan;state.run=run;state.rows=rows;state.warnings=validateRun(plan,run,new Date(),language);
+    if(runRes.status==='rejected')state.warnings.push(translation('status.lastRunUnknown'));
     updateView();
-    const dt=plan.generated_at?formatter.format(new Date(plan.generated_at)):'onbekend';
+    const dt=plan.generated_at?formatter.format(new Date(plan.generated_at)):translation('status.unknown');
     const age=plan.generated_at?Math.max(0,Math.round((Date.now()-new Date(plan.generated_at).getTime())/60000)):null;
-    const detail=`${rows.length} tijdstippen · Plan ${dt}`;
-    if(state.warnings.length){status('bad','Controle nodig',detail);showMessage(state.warnings.join('  •  '));}
-    else{status('good','Optimalisatie actueel',detail);showMessage('');}
-    setText('status-meta',`${run?.action||'naive-mpc-optim'} · ${age===null?'leeftijd onbekend':`${age} min geleden`} · EMHASS ${run?.emhass_version||'—'}`);
+    const detail=translation('status.planDetail',{count:rows.length,date:dt});
+    if(state.warnings.length){status('bad',translation('status.review'),detail);showMessage(state.warnings.join('  •  '));}
+    else{status('good',translation('status.optimized'),detail);showMessage('');}
+    setText('status-meta',`${run?.action||'naive-mpc-optim'} · ${age===null?translation('status.ageUnknown'):translation('status.ageMinutes',{minutes:age})} · EMHASS ${run?.emhass_version||'—'}`);
   }catch(e){
     if(!state.rows.length){state.plan=null;state.rows=[];updateView();}
-    status('bad','Geen live verbinding','Controleer EMHASS_URL en de add-on bereikbaarheid');
-    showMessage(`${e.message}  De viewer blijft alleen-lezen. Klik op Demo om de bediening met voorbeelddata te bekijken.`);
-    setText('status-meta','Live data niet beschikbaar');
+    status('bad',translation('status.noLive'),translation('status.checkConnection'));
+    showMessage(translation('status.errorHelp',{error:e.message}));
+    setText('status-meta',translation('status.liveUnavailable'));
   }finally{state.loading=false;$('reload').disabled=false;$('refresh-icon').textContent='↻';}
 }
 function loadDemo(){
-  const {plan,run}=createDemo();state.plan=plan;state.run=run;state.rows=normalizePlan(plan);state.warnings=[];
-  updateView();status('','DEMO · Voorbeeldgegevens','Gegenereerde voorbeeldplanning, geen gegevens van jouw installatie');
-  setText('status-meta',`${state.rows.length} tijdstippen brondata · fictieve waarden`);
-  showMessage('DEMO-MODUS — Alle bedragen en grafieken zijn fictief. Schakel naar Live om jouw EMHASS-optimalisatie op te halen.');
+  const {plan,run}=createDemo();state.plan=plan;state.run=run;state.rows=normalizePlan(plan,language);state.warnings=[];
+  updateView();status('',translation('status.demoTitle'),translation('status.demoDetail'));
+  setText('status-meta',translation('status.demoMeta',{count:state.rows.length}));
+  showMessage(translation('status.demoNotice'));
 }
 function setMode(mode){state.mode=mode;state.hovered=null;state.selected=null;state.page=0;updateModes();if(mode==='demo')loadDemo();else{state.rows=[];updateView();loadLive();}}
 function attachEvents(){
@@ -285,9 +293,40 @@ function attachEvents(){
   const links=[...document.querySelectorAll('.nav-link')];links.forEach(a=>a.addEventListener('click',()=>{links.forEach(l=>l.classList.toggle('active',l===a));}));
   let previousWidth=window.innerWidth;window.addEventListener('resize',()=>{if(Math.abs(window.innerWidth-previousWidth)>10){previousWidth=window.innerWidth;for(const def of chartDefs)drawChart(def);}});
 }
-function init(){try{document.documentElement.dataset.theme=localStorage.getItem('emhass-theme')==='light'?'light':'dark';}catch{};
+function updateClock() {
+  setText('clock',new Intl.DateTimeFormat(language === 'nl' ? 'nl-NL' : 'en-GB',{
+    timeZone:TIMEZONE,weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'
+  }).format(new Date()));
+}
+function setLanguage(next) {
+  const normalized=normalizeLanguageTag(next);
+  const changed=normalized!==language;
+  language=normalized;
+  document.documentElement.lang=language;
+  configureFormatters();
+  if(appliedLanguage !== language) {
+    translateStatic(document,language);
+    appliedLanguage = language;
+  }
+  if(changed && state.rows.length) {
+    // Format already fetched values again without restarting or altering EMHASS.
+    updateModes();updateView();
+    if(state.mode==='demo')loadDemo();
+    else loadLive();
+  }
+  updateClock();
+}
+function refreshLanguage() {
+  setLanguage(detectLanguage(window.parent, navigator));
+}
+function init(){
+  refreshLanguage();
+  window.addEventListener('focus',refreshLanguage);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLanguage();});
+try{document.documentElement.dataset.theme=localStorage.getItem('emhass-theme')==='light'?'light':'dark';}catch{};
   attachEvents();const demo=new URLSearchParams(location.search).get('demo')==='1';setMode(demo?'demo':'live');
-  setText('clock',new Intl.DateTimeFormat('nl-NL',{timeZone:TIMEZONE,weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}).format(new Date()));
-  setInterval(()=>{if(state.mode==='live')loadLive();},60000);
+  updateClock();
+  setTimeout(refreshLanguage,1500);
+  setInterval(()=>{refreshLanguage();if(state.mode==='live')loadLive();},60000);
 }
 init();

@@ -31,3 +31,6 @@ Dat is een voorbeeld; gebruik de echte id van jouw bestaande EMHASS add-on. Star
 - Bij een fout of oud plan wordt een waarschuwing getoond.
 
 **Geen officiële EMHASS-add-on; los leesdashboard.**
+
+## Language / Taal (v0.3.0)
+De taal volgt je Home Assistant-profiel als de Ingress-frontend de taal kan uitlezen. Anders wordt de browsertaal gebruikt. Ondersteund: Engels en Nederlands. Geen configuratie vereist.
