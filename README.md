@@ -3,7 +3,7 @@
 Een modern, lokaal **read-only** resultaten-dashboard voor de bestaande EMHASS Home Assistant-app.
 
 - Interactieve grafieken voor batterij, SOC, PV/verbruik en net/stroomprijzen.
-- Netto kostenprognoses voor resterend vandaag en morgen volgens de Nederlandse kalenderdagen, onafhankelijk van de grafiekhorizon.
+- Dagprognoses: netto energiekosten voor resterend vandaag en morgen, volgens lokale Nederlandse kalenderdagen (ongeacht de 12/24/48-uurs grafiekselectie).
 - Planning over 12, 24 of 48 uur met geselecteerd kwartier en filterbare tabel.
 - CSV-export, demomodus, detectie van verouderde plannen en fouten.
 - Home Assistant Ingress; geen directe webpoort, geen HA-token, geen schrijfacties.

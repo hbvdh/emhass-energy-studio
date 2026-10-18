@@ -83,20 +83,22 @@ export function computeStats(rows) {
 }
 
 
-// Time zone aware daily boundaries; DST can make a day 23 or 25 hours.
+// Date-only partitioning in Europe/Amsterdam (including 23- and 25-hour DST days).
 const amsterdamDayFormatter = new Intl.DateTimeFormat('en-GB', {
   timeZone: TIMEZONE, year: 'numeric', month: '2-digit', day: '2-digit'
 });
 export function localDayKey(date) {
-  const p = Object.fromEntries(amsterdamDayFormatter.formatToParts(date).map(x => [x.type,x.value]));
-  return [p.year,p.month,p.day].join('-');
+  const parts = Object.fromEntries(amsterdamDayFormatter.formatToParts(date).map(p => [p.type, p.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 function nextDayKey(key) {
-  return new Date(Date.parse(key + 'T12:00:00Z') + 86400000).toISOString().slice(0,10);
+  return new Date(Date.parse(`${key}T12:00:00Z`) + 86400000).toISOString().slice(0, 10);
 }
+// Locate the first UTC millisecond of a specified local calendar day.
+// Binary search avoids incorrect fixed +01:00/+02:00 assumptions around DST.
 export function localMidnightUtcMs(key) {
-  const nominal = Date.parse(key + 'T00:00:00Z');
-  let low = nominal - 43200000, high = nominal + 43200000;
+  const nominal = Date.parse(`${key}T00:00:00Z`);
+  let low = nominal - 12 * 3600000, high = nominal + 12 * 3600000;
   while (high - low > 1) {
     const mid = Math.floor((low + high) / 2);
     if (localDayKey(new Date(mid)) >= key) high = mid;
@@ -104,36 +106,42 @@ export function localMidnightUtcMs(key) {
   }
   return high;
 }
-function forecastCostInWindow(rows,startMs,endMs) {
-  if (!rows.length || !(endMs > startMs)) return {cost:null,partial:true};
+
+function forecastCostInWindow(rows, startMs, endMs) {
+  if (!rows.length || !(endMs > startMs)) return { cost: null, partial: true };
   const stepMs = timeStepHours(rows) * 3600000;
   let cost = 0, coveredMs = 0, invalid = false;
-  for (let i=0;i<rows.length;i++) {
-    const r = rows[i], t = r.date.getTime();
-    const interval = i < rows.length-1
-      ? Math.min(stepMs*2,Math.max(0,rows[i+1].date.getTime()-t)) : stepMs;
-    const overlap = Math.max(0,Math.min(endMs,t+interval)-Math.max(startMs,t));
-    if (!overlap) continue;
-    coveredMs += overlap;
-    if (r.P_grid === null ||
-        (r.P_grid > 0 && r.unit_load_cost === null) ||
-        (r.P_grid < 0 && r.unit_prod_price === null)) {
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const t = r.date.getTime();
+    const intervalMs = i < rows.length - 1
+      ? Math.min(stepMs * 2, Math.max(0, rows[i + 1].date.getTime() - t))
+      : stepMs;
+    const overlapMs = Math.max(0, Math.min(endMs, t + intervalMs) - Math.max(startMs, t));
+    if (!overlapMs) continue;
+    coveredMs += overlapMs;
+    const grid = r.P_grid;
+    if (grid === null || (grid > 0 && r.unit_load_cost === null) || (grid < 0 && r.unit_prod_price === null)) {
       invalid = true;
       continue;
     }
-    cost += (Math.max(0,r.P_grid)*(r.unit_load_cost ?? 0)
-      - Math.max(0,-r.P_grid)*(r.unit_prod_price ?? 0)) / 1000 * overlap / 3600000;
+    cost += (Math.max(0, grid) * (r.unit_load_cost ?? 0)
+      - Math.max(0, -grid) * (r.unit_prod_price ?? 0)) / 1000 * overlapMs / 3600000;
   }
-  const partial = coveredMs < (endMs-startMs) - Math.min(stepMs,MS_15M);
-  return {cost:coveredMs && !invalid ? cost : null,partial};
+  // Missing a whole interval or more is reported as a partial forecast, not a full day.
+  const partial = coveredMs < (endMs - startMs) - Math.min(stepMs, MS_15M);
+  return { cost: coveredMs && !invalid ? cost : null, partial };
 }
-export function computeDailyCostForecasts(rows,now=new Date()) {
+
+// Day cards are independent of the selected 12/24/48h chart filter.
+// Today means ONLY the remaining planned hours, not historical actual costs.
+export function computeDailyCostForecasts(rows, now = new Date()) {
   const today = localDayKey(now);
   const tomorrowStart = localMidnightUtcMs(nextDayKey(today));
-  const endTomorrow = localMidnightUtcMs(nextDayKey(nextDayKey(today)));
+  const dayAfterTomorrow = localMidnightUtcMs(nextDayKey(nextDayKey(today)));
   return {
-    today:forecastCostInWindow(rows,now.getTime(),tomorrowStart),
-    tomorrow:forecastCostInWindow(rows,tomorrowStart,endTomorrow)
+    today: forecastCostInWindow(rows, now.getTime(), tomorrowStart),
+    tomorrow: forecastCostInWindow(rows, tomorrowStart, dayAfterTomorrow)
   };
 }
 

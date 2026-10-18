@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer, request} from 'node:http';
 import {once} from 'node:events';
+import {readFileSync} from 'node:fs';
 import {startServer} from '../server.mjs';
 
 test('proxy permits only read-only fixed endpoints; serves UI',async()=>{
@@ -77,4 +78,14 @@ test('Ingress-only HTTP listener blocks requests other than Supervisor TCP peer'
   assert.equal((await fetch(base+'/')).status,403);
   assert.equal((await fetch(base+'/api/plan')).status,403);
  } finally { await new Promise(ok=>app.close(ok)); }
+});
+
+
+test('dashboard opens at 24 hours and table displays 28 quarters per page',()=>{
+  const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+  assert.match(app,/\bhours:24, filter:/);
+  assert.match(app,/const PAGE_SIZE=28;/);
+  assert.match(html,/<button data-hours="24" class="active">24 uur<\/button>/);
+  assert.match(html,/<button data-hours="48">48 uur<\/button>/);
 });

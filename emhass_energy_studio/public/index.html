@@ -27,7 +27,7 @@
       <div class="sidebar-bottom">
         <div class="mini-label">VERBINDING</div>
         <div class="connect-card"><span class="status-dot" id="sidebar-dot"></span><span id="sidebar-connection">Nog niet verbonden</span></div>
-        <div class="side-foot">Onafhankelijke, alleen-lezen viewer<br>v0.2.3 · geen invloed op EMHASS</div>
+        <div class="side-foot">Onafhankelijke, alleen-lezen viewer<br>v0.2.5 · geen invloed op EMHASS</div>
       </div>
     </aside>
     <main id="top">
@@ -45,7 +45,7 @@
         <article class="kpi kpi-purple"><div class="kpi-top"><span>Netimport</span><span class="kpi-icon">⇆</span></div><div class="kpi-value" id="kpi-import">—</div><div class="kpi-bottom"><span>Bruto energie uit het net</span><span class="kpi-dash">↗</span></div></article>
         <article class="kpi kpi-lime"><div class="kpi-top"><span>Hoogste batterij-SOC</span><span class="kpi-icon">▣</span></div><div class="kpi-value" id="kpi-soc">—</div><div class="kpi-bottom"><span>In geselecteerde planning</span><span class="kpi-dash">↗</span></div></article>
       </section>
-      <div class="workspace-header" id="energy"><div><div class="section-eyebrow">PLANNING ANALYTICS</div><h2>Energiestromen & optimalisatie</h2><p>Beweeg over een grafiek of selecteer een kwartier voor de exacte waarden.</p></div><div class="time-switch" role="group" aria-label="Tijdshorizon"><button data-hours="12">12 uur</button><button data-hours="24">24 uur</button><button data-hours="48" class="active">48 uur</button></div></div>
+      <div class="workspace-header" id="energy"><div><div class="section-eyebrow">PLANNING ANALYTICS</div><h2>Energiestromen & optimalisatie</h2><p>Beweeg over een grafiek of selecteer een kwartier voor de exacte waarden.</p></div><div class="time-switch" role="group" aria-label="Tijdshorizon"><button data-hours="12">12 uur</button><button data-hours="24" class="active">24 uur</button><button data-hours="48">48 uur</button></div></div>
       <div class="charts-grid">
         <section class="panel chart-panel wide"><div class="panel-head"><div><h3>Verbruik, opwek & net</h3><p>Vermogensplanning · kW</p></div><div class="legend" id="legend-energy"><button data-series="P_Load" class="series-toggle selected"><i style="--c:#9b90ff"></i>Verbruik</button><button data-series="P_PV" class="series-toggle selected"><i style="--c:#29dac5"></i>Zon</button><button data-series="P_grid" class="series-toggle selected"><i style="--c:#f7b86d"></i>Net</button></div></div><div class="chart" id="chart-energy"></div><div class="chart-hint">Positief netvermogen = import · negatief = export</div></section>
         <section class="panel chart-panel" id="battery"><div class="panel-head"><div><h3>Batterijvermogen</h3><p>Ontladen (+) / laden (−) · kW</p></div><span class="panel-icon violet">↯</span></div><div class="chart" id="chart-battery"></div><div class="chart-hint">Onder de nullijn wordt de batterij geladen</div></section>

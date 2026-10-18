@@ -9,21 +9,24 @@ main{min-width:0;padding:0 clamp(22px,3.65vw,65px);max-width:1800px;width:100%;m
 @media(max-width:1150px){.layout{grid-template-columns:74px minmax(0,1fr)}.sidebar{padding:29px 9px}.brand{padding:0 7px}.brand>span:last-child,.sidebar-label,.nav-link:not(.active),.nav-link.active{font-size:0}.sidebar .nav-link{display:flex;justify-content:center;padding:0}.nav-glyph{font-size:23px}.sidebar-bottom{display:none}.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.layout{display:block}.sidebar{position:relative;height:68px;flex-direction:row;align-items:center;padding:8px 18px}.brand>span:last-child{display:block}.sidebar nav{display:none}.topline{height:54px}.intro{padding-top:35px;display:block}.intro-actions{padding-top:24px}.kpi-grid{gap:10px;margin-bottom:34px}.kpi{padding:15px}.kpi-value{font-size:25px}.charts-grid{grid-template-columns:minmax(0,1fr)}.chart-panel.wide{grid-column:auto}.workspace-header{align-items:flex-start;flex-direction:column}.chart-panel{padding:17px 13px}.chart-panel.wide:first-child .chart{height:245px}.chart{height:215px}.data-panel{padding:18px 13px 0}.data-heading{align-items:start;flex-direction:column}.selection-bar{gap:20px;padding:20px 15px}.selected-first{flex-basis:100%}.table-filters{margin-top:16px}.top-clock{display:none}footer{display:block;line-height:2}.panel-head .legend{gap:9px}.status-meta{display:none}}
 
-/* v0.2.3: two large daily cost cards and compact intro on narrow devices. */
+/* v0.2.3: show today/tomorrow prominently, with three supporting metrics below. */
 .kpi-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
 .kpi{grid-column:span 2}
 .kpi-cost-today,.kpi-cost-tomorrow{grid-column:span 3}
 .kpi-amber{--tone:var(--amber)}
 @media(max-width:1150px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi{grid-column:auto}}
 @media(max-width:760px){
- .intro{padding-top:23px}
- .intro h1{font-size:clamp(23px,6.2vw,29px);line-height:1.17;letter-spacing:-.035em;margin:13px 0 10px}
- .intro p{font-size:11px;line-height:1.55;max-width:38ch}
- .intro-actions{padding-top:17px}
+  .intro{padding-top:23px}
+  .intro h1{font-size:clamp(23px,6.2vw,29px);line-height:1.17;letter-spacing:-.035em;margin:13px 0 10px}
+  .intro p{font-size:11px;line-height:1.55;max-width:38ch}
+  .intro-actions{padding-top:17px}
 }
-@media(max-width:380px){.kpi-grid{grid-template-columns:minmax(0,1fr)}.intro h1{font-size:23px}}
+@media(max-width:380px){
+  .kpi-grid{grid-template-columns:minmax(0,1fr)}
+  .intro h1{font-size:23px}
+}
 
-/* v0.2.4 - stable touch tooltip with unchanged mouse hover */
+/* 0.2.4 - A tap pins quarter details; desktop mouse hover is unchanged. */
 .tooltip.pinned{pointer-events:auto;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom, 0px));top:auto;width:auto;max-width:330px;padding-right:34px;z-index:100}
 .tooltip.pinned strong{padding-right:10px}
 .tooltip-close{position:absolute;top:7px;right:7px;display:grid;place-items:center;border:1px solid #365265;color:#e3eef8;background:#1b2c40;width:28px;height:28px;border-radius:7px;font-size:20px;line-height:1;cursor:pointer}
