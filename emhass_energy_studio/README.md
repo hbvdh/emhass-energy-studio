@@ -1,13 +1,11 @@
 # EMHASS Energy Studio
 
-Moderne, **alleen-lezen** weergave van de EMHASS-optimalisatie: interactieve grafieken, 12/24/48 uur, status, kwartierentabel en CSV-export.
+[English instructions](../README.md) | [Nederlandse handleiding](../README.nl.md)
 
-De originele EMHASS-add-on blijft ongewijzigd. De interface werkt via Home Assistant Ingress zonder extra externe poort.
+A modern, **read-only** view of your EMHASS optimization: interactive graphs, 12/24/48-hour selection (24 by default), 28-row quarter-hour table, daily net cost forecasts and CSV export.
 
-Na installatie: vul de **volledige add-on-ID** van je EMHASS-installatie in bij `emhass_slug`. Meer informatie staat in `DOCS.md`.
+The original EMHASS add-on is not modified. Access is provided through Home Assistant Ingress without exposing another network port.
 
-**Experimentele community-software. Niet officieel verbonden aan EMHASS of Home Assistant.**
+After installing, set `emhass_slug` to your **full original EMHASS add-on ID** under Configuration. Optionally set `language: auto` (default), `en`, or `nl`, and restart the app. More information: [DOCS.md](DOCS.md) / [DOCS.nl.md](DOCS.nl.md).
 
-## Kostenprognose per dag (v0.2.3)
-
-Vandaag = alleen nog geplande tijdvakken tot middernacht (geen reeds gerealiseerde kosten). Morgen = volgende volledige Nederlandse kalenderdag. De berekening gebruikt netvermogen en import-/exporttarieven van het EMHASS-plan en houdt rekening met zomer- en wintertijd. Bij ontbrekende tijdvakken staat bij het bedrag `gedeeltelijk`; bij ontbrekende prijs- of netwaarden verschijnt `—`. De dagkaarten worden niet door de grafiekhorizon gefilterd.
+**Experimental community software, not officially affiliated with EMHASS or Home Assistant.**

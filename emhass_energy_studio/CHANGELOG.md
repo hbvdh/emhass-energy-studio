@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 - Language configuration and bilingual docs
+- Add-on Configuration now offers language: auto, en or nl (default: auto).
+- Forced language applies to the entire installation; auto detects HA account locale where accessible, then browser locale.
+- Read-only /api/settings sends only the validated language preference to the frontend.
+- English README and documentation with Dutch versions.
+- Regression tests for configuration precedence, HTTP endpoint and manifest.
+
 ## 0.3.0 - English / Dutch user language
 - Two complete UI translations: English and Dutch (charts, labels, tooltips, statuses, warnings, CSV, times, currency).
 - Automatic per-user language detection: Home Assistant iframe parent language first when accessible, browser language otherwise.

@@ -22,7 +22,8 @@ function json(res, code, data) {
   res.end(value);
 }
 
-export function startServer({ hostname = host, listenPort = port, upstreamUrl = source, ingressOnly = process.env.INGRESS_ONLY === '1' } = {}) {
+export function startServer({ hostname = host, listenPort = port, upstreamUrl = source, languagePreference = 'auto', ingressOnly = process.env.INGRESS_ONLY === '1' } = {}) {
+  const configuredLanguage = ['auto','en','nl'].includes(languagePreference) ? languagePreference : 'auto';
   let baseUrl;
   try {
     if (upstreamUrl) {
@@ -55,6 +56,8 @@ export function startServer({ hostname = host, listenPort = port, upstreamUrl = 
       return json(res, 405, { error: 'Deze frontend is alleen-lezen. Alleen GET is toegestaan.' });
     }
     if (pathname === '/health') return json(res, 200, { status: 'ok', configured: !!baseUrl });
+    // Read-only, language-only response; never expose the add-on options or credentials.
+    if (pathname === '/api/settings') return json(res, 200, { language: configuredLanguage });
     if (pathname.startsWith('/api/')) {
       const paths = { '/api/plan': '/api/v1/plan', '/api/last-run': '/api/v1/last-run' };
       const target = paths[pathname];

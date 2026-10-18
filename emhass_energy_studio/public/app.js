@@ -1,8 +1,9 @@
 import { TIMEZONE, normalizePlan, validateRun, computeStats, computeDailyCostForecasts, createDemo } from './data.js';
-import { detectLanguage, normalizeLanguageTag, t, translateStatic } from './i18n.js';
+import { resolveLanguage, normalizeLanguageTag, t, translateStatic } from './i18n.js';
 
 const $ = id => document.getElementById(id);
 let language = 'nl';
+let languagePreference = 'auto';
 let appliedLanguage = null;
 let formatter, shortDate, axisDate;
 const translation = (key, values) => t(language, key, values);
@@ -317,9 +318,14 @@ function setLanguage(next) {
   updateClock();
 }
 function refreshLanguage() {
-  setLanguage(detectLanguage(window.parent, navigator));
+  setLanguage(resolveLanguage(languagePreference, window.parent, navigator));
 }
-function init(){
+async function init(){
+  // Fetch only the read-only language preference; never request add-on secrets.
+  try {
+    const settings = await fetchJson('./api/settings');
+    languagePreference = ['auto','en','nl'].includes(settings.language) ? settings.language : 'auto';
+  } catch { languagePreference = 'auto'; }
   refreshLanguage();
   window.addEventListener('focus',refreshLanguage);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshLanguage();});

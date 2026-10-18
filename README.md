@@ -1,49 +1,60 @@
 # EMHASS Energy Studio
 
-A modern, local / Een modern, lokaal **read-only** resultaten-dashboard voor de bestaande EMHASS Home Assistant-app.
+[**Nederlands**](README.nl.md) | **English**
 
-- Interactieve grafieken voor batterij, SOC, PV/verbruik en net/stroomprijzen.
-- Dagprognoses: netto energiekosten voor resterend vandaag en morgen, volgens lokale Nederlandse kalenderdagen (ongeacht de 12/24/48-uurs grafiekselectie).
-- Planning over 12, 24 of 48 uur met geselecteerd kwartier en filterbare tabel.
-- CSV-export, demomodus, detectie van verouderde plannen en fouten.
-- Home Assistant Ingress; geen directe webpoort, geen HA-token, geen schrijfacties.
-- Vereist een draaiende EMHASS-app met `/api/v1/plan` en `/api/v1/last-run` (getest met gesimuleerde EMHASS 0.18.6 API-responses).
+A modern, **read-only** dashboard for your existing EMHASS Home Assistant app, available through Home Assistant Ingress.
 
-## Installeren in Home Assistant OS
+- Interactive charts for battery power, state of charge, PV generation, consumption, grid power and dynamic electricity tariffs.
+- Separate net-energy-cost forecasts for the rest of today and for tomorrow (Amsterdam local calendar days, with daylight saving time handling).
+- Charts for 12, **24 (default)** or 48 hours; a linked, searchable quarter-hour data table with 28 rows per page.
+- Mobile-friendly chart details, CSV export, demonstration mode and warnings about stale or unsuccessful optimizations.
+- No new exposed network port, Home Assistant access token, or modification of your EMHASS optimizer.
+- Requires the running EMHASS add-on endpoints `/api/v1/plan` and `/api/v1/last-run` (tested with mocked EMHASS 0.18.6 data).
 
-1. Ga naar **Instellingen → Apps → App installeren → ⋮ → Repositories**.
-2. Voeg toe: `https://github.com/hbvdh/emhass-energy-studio`.
-3. Installeer **EMHASS Energy Studio**, start de app en zet eventueel **Toon in zijbalk** aan.
-4. Zoek bij je bestaande EMHASS-app de volledige add-on-ID, bijvoorbeeld `a0d7b954_emhass`. Je kunt die vinden in de adresbalk op de app-infopagina, of via `ha addons list` in de terminal.
-5. Zet in de nieuwe app onder Configuratie `emhass_slug` op die ID en start de app opnieuw.
-6. Open **EMHASS Studio** via Home Assistant.
+## Install on Home Assistant OS
 
-**Belangrijk:** gebruik de volledige werkelijke add-on-ID. Alleen `emhass` is onvoldoende. De nieuwe app gebruikt intern de EMHASS-service op poort 5000. Er hoeft niets vanuit je LAN of het internet naar deze service geopend te worden.
+1. Open **Settings → Apps → App Store → ⋮ → Repositories** (menu names may vary by HA version).
+2. Add `https://github.com/hbvdh/emhass-energy-studio`.
+3. Install **EMHASS Energy Studio** from the App Store.
+4. Find the **full add-on ID** for your existing EMHASS installation, for example `5b918bf2_emhass`, under its app info page or via `ha addons list`.
+5. Under **Energy Studio → Configuration**, enter the full ID in `emhass_slug`. Optionally choose `language` (`auto`, `en`, `nl`). Save and restart the app.
+6. Open the Energy Studio interface in the HA sidebar.
 
-### Troubleshooting
+Example configuration:
 
-- Zie je alleen de demo? Selecteer **Live** en controleer de `emhass_slug`.
-- Geen live data? Controleer of EMHASS draait en of de API-endpoints beschikbaar zijn.
-- Bij een oud plan of een mislukte laatste run blijft de laatst bekende planning zichtbaar **met waarschuwing**.
-- Zie de documentatie in `emhass_energy_studio/DOCS.md`.
+```yaml
+emhass_slug: 5b918bf2_emhass
+language: auto
+```
 
-### Bijwerken
+The ID above is an **example**; use your own full EMHASS add-on ID. The apps communicate internally on port 5000. No port forwarding or public exposure is required.
 
-Verhoog de versie in `emhass_energy_studio/config.yaml` bij elke release. Na publicatie kan Home Assistant de update aanbieden via de appwinkel. Zolang er geen container-image in `config.yaml` staat, bouwt Home Assistant de app lokaal uit de aanwezige Dockerfile.
+## Language options
 
-## Ontwikkelen
+| Setting | Behaviour |
+| --- | --- |
+| `auto` (default) | Uses the Home Assistant account language if exposed to the Ingress page; otherwise the browser language. Other languages fall back to English. |
+| `en` | Forces English for **all users** of this Energy Studio installation. |
+| `nl` | Forces Dutch for **all users** of this Energy Studio installation. |
 
-```bash
+There is **no language switch in the dashboard**. In `auto`, different users/devices can use different languages. A forced language is an add-on-wide setting, not a per-user preference. Save and restart after changing it.
+
+## Updating and troubleshooting
+
+Refresh the App Store and update Energy Studio there. Your existing EMHASS settings remain unchanged.
+
+- **No live data**: verify `emhass_slug` and ensure EMHASS is running and accessible within the add-on network.
+- **Only demo data**: switch to Live in the interface, or configure `emhass_slug`.
+- **Stale plan**: the last successful plan remains visible with a warning if a later optimization failed.
+- **Auto language did not follow HA**: browser security can prevent reading the parent Home Assistant frame. Use `language: en`/`nl` for deterministic behaviour.
+
+See [detailed technical documentation](emhass_energy_studio/DOCS.md) and the [changelog](emhass_energy_studio/CHANGELOG.md).
+
+## Development
+
+```sh
 cd emhass_energy_studio
 npm test
 ```
 
-De Node.js-webserver heeft geen externe npm-afhankelijkheden. De app is op gesimuleerde API-antwoorden getest, **nog niet op een echte Home Assistant-installatie**.
-
-Dit is onofficiële, experimentele community-software; niet onderdeel van het EMHASS-project. Licentie: MIT.
-
-## Language / Taal
-
-The dashboard uses your Home Assistant account language when accessible from Ingress. Otherwise it uses the browser language. Dutch (`nl`) and English (`en`) are supported; other languages fall back to English. Reload after changing your HA profile language. There is no global language setting.
-
-Het dashboard gebruikt waar mogelijk de taal van jouw Home Assistant-gebruiker. Anders gebruikt het de browsertaal. Nederlands (`nl`) en Engels (`en`) worden ondersteund; overige talen vallen terug op Engels. Herlaad na het aanpassen van je HA-profieltaal.
+The server uses Node.js without third-party runtime packages. This is experimental, unofficial community software, not endorsed by EMHASS or Home Assistant. License: [MIT](LICENSE).

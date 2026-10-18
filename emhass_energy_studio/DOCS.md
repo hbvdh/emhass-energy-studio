@@ -1,36 +1,41 @@
 # EMHASS Energy Studio (Home Assistant Ingress)
 
-Deze add-on toont de EMHASS-optimalisatie in een moderne resultatenpagina, zonder instellingen of optimalisaties te wijzigen.
+**English** | [Nederlands](DOCS.nl.md)
 
-## Configuratie
+Energy Studio is a separate, read-only web frontend. It never changes your existing EMHASS optimization settings.
 
-Open de bestaande EMHASS add-on **Info** in Home Assistant. Kijk naar de adresbalk: `/hassio/addon/<id>/info`. Kopieer alleen `<id>`, bijvoorbeeld `abc12345_emhass`.
+## Configuration
 
-Vul bij deze add-on op **Configuratie** in:
+Open the original EMHASS add-on info page in HA. The URL contains `/hassio/addon/<id>/info`. Copy the full add-on ID (for example `abc12345_emhass`) into Energy Studio's configuration:
 
 ```yaml
 emhass_slug: abc12345_emhass
+language: auto
 ```
 
-Dat is een voorbeeld; gebruik de echte id van jouw bestaande EMHASS add-on. Start de Studio opnieuw. Open vervolgens **Open webinterface** of de zijbalk **EMHASS Studio**.
+The ID is an example. Save and restart Energy Studio. The app reads the EMHASS API on internal port 5000 through Home Assistant add-on DNS.
+Only `GET /api/v1/plan` and `GET /api/v1/last-run` are proxied. If `emhass_slug` is empty, demo mode remains available.
 
-`emhass_slug` mag leeg blijven om uitsluitend de gemarkeerde demomodus te proberen. De serverproxy gebruikt intern poort 5000 van EMHASS via Home Assistant DNS, zonder poortpublicatie, en biedt alleen de twee read-only endpoints `/api/v1/plan` en `/api/v1/last-run` aan.
+## Language
 
-## Beveiliging
+- `auto` (default): HA user language if the parent HA frame is accessible; otherwise browser language; other languages fall back to English.
+- `en`: English for every user of this Energy Studio installation.
+- `nl`: Dutch for every user of this Energy Studio installation.
 
-- Home Assistant Ingress verzorgt de authenticatie.
-- Alleen verzoeken van de Supervisor-IP `172.30.32.2` worden geaccepteerd.
-- Er worden geen extra hostpoorten, HA-secrets of volumes gekoppeld.
-- Het dashboard kan geen optimalisaties starten of configuraties wijzigen.
+An add-on-wide forced preference cannot provide different languages for different users. Set `auto` to allow per-user language detection. The frontend fetches only the language choice from the read-only `GET /api/settings` endpoint; the complete add-on options and credentials are never exposed.
 
-## Storingen
+## Security
 
-- `EMHASS_URL ontbreekt` -> configureer `emhass_slug`.
-- `Kan EMHASS niet bereiken` -> controleer de slug, of EMHASS draait en of deze `server_ip: 0.0.0.0` gebruikt. De EMHASS add-on luistert intern op poort 5000.
-- Lege planning -> draai eerst EMHASS zelf; de Studio start geen optimalisatie.
-- Bij een fout of oud plan wordt een waarschuwing getoond.
+- Home Assistant Ingress authenticates the viewer.
+- The server accepts connections only from the Home Assistant Supervisor's Ingress peer IP (`172.30.32.2`).
+- No externally exposed port, HA API token or volume mounts are added.
+- The dashboard cannot run optimization or write configuration.
 
-**Geen officiële EMHASS-add-on; los leesdashboard.**
+## Troubleshooting
 
-## Language / Taal (v0.3.0)
-De taal volgt je Home Assistant-profiel als de Ingress-frontend de taal kan uitlezen. Anders wordt de browsertaal gebruikt. Ondersteund: Engels en Nederlands. Geen configuratie vereist.
+- No connection: check the complete `emhass_slug`, original add-on status, and if EMHASS binds to `server_ip: 0.0.0.0`.
+- Empty plan: run EMHASS optimization first; Energy Studio never starts one.
+- Stale plan: a warning is displayed when a later optimization fails or the data is old.
+- Automatic language detection: browser iframe protections may block access to the parent page. Force `en` or `nl` in add-on settings if required.
+
+This is unofficial, experimental community software.

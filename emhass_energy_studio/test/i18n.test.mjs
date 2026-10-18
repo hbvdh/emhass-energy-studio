@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {detectLanguage, normalizeLanguageTag, messages, t} from '../public/i18n.js';
+import {detectLanguage, resolveLanguage, normalizeLanguageTag, messages, t} from '../public/i18n.js';
 import {normalizePlan, validateRun} from '../public/data.js';
 
 test('language detection reads Home Assistant locale before browser locale', () => {
@@ -49,4 +49,15 @@ test('Live EMHASS warnings and parsing errors can be displayed in English', () =
   const warnings=validateRun(plan,run,new Date('2026-10-17T10:00:00Z'),'en');
   assert.ok(warnings.some(text=>text.includes('60 minutes old')));
   assert.ok(warnings.some(text=>text.includes('infeasible')));
+});
+
+test('add-on language overrides browser and HA, auto follows HA then browser', () => {
+  const parent = {document: {querySelector: () => ({hass:{locale:{language:'nl-NL'}}})}};
+  const englishBrowser = {language:'en-GB'};
+  assert.equal(resolveLanguage('en',parent,englishBrowser),'en');
+  assert.equal(resolveLanguage('nl',parent,englishBrowser),'nl');
+  assert.equal(resolveLanguage('auto',parent,englishBrowser),'nl');
+  const blocked = {get document() {throw new Error('SecurityError');}};
+  assert.equal(resolveLanguage('auto',blocked,englishBrowser),'en');
+  assert.equal(resolveLanguage('unsupported',blocked,{language:'nl-NL'}),'nl');
 });

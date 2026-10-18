@@ -84,7 +84,7 @@ export const messages = {
     'section.interact': 'Beweeg over een grafiek of selecteer een kwartier voor de exacte waarden.',
     'selection.quarter': 'GESELECTEERD KWARTIER',
     'sidebar.readonly': 'Onafhankelijke, alleen-lezen viewer',
-    'sidebar.version': 'v0.3.0 · geen invloed op EMHASS',
+    'sidebar.version': 'v0.3.1 · geen invloed op EMHASS',
     'status.ageMinutes': '{minutes} min geleden',
     'status.ageUnknown': 'leeftijd onbekend',
     'status.checkConnection': 'Controleer EMHASS_URL en de add-on bereikbaarheid',
@@ -213,7 +213,7 @@ export const messages = {
     'section.interact': 'Hover over a chart or select a quarter-hour to see exact values.',
     'selection.quarter': 'SELECTED QUARTER-HOUR',
     'sidebar.readonly': 'Independent, read-only viewer',
-    'sidebar.version': 'v0.3.0 · does not affect EMHASS',
+    'sidebar.version': 'v0.3.1 · does not affect EMHASS',
     'status.ageMinutes': '{minutes} min ago',
     'status.ageUnknown': 'age unknown',
     'status.checkConnection': 'Check the EMHASS URL and add-on connectivity',
@@ -277,6 +277,12 @@ export function detectLanguage(parentWindow, browserNavigator) {
   const choice = (Array.isArray(languages) && languages.length ? languages[0] : null)
     || browserNavigator?.language || 'en';
   return normalizeLanguageTag(choice);
+}
+
+// Explicit add-on setting takes precedence over the current HA/browser locale.
+export function resolveLanguage(preference, parentWindow, browserNavigator) {
+  if (preference === 'en' || preference === 'nl') return preference;
+  return detectLanguage(parentWindow, browserNavigator);
 }
 
 export function t(language, key, values = {}) {

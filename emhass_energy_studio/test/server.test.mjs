@@ -89,3 +89,33 @@ test('dashboard opens at 24 hours and table displays 28 quarters per page',()=>{
   assert.match(html,/<button[^>]*class="active"[^>]*data-hours="24"[^>]*>24 uur<\/button>/);
   assert.match(html,/<button[^>]*data-hours="48"[^>]*>48 uur<\/button>/);
 });
+
+test('language settings endpoint serves only a validated preference and never exposes credentials',async()=>{
+ const app=startServer({hostname:'127.0.0.1',listenPort:0,upstreamUrl:'',languagePreference:'nl'});
+ await once(app,'listening');
+ try {
+  const origin=`http://127.0.0.1:${app.address().port}`;
+  const result=await fetch(origin+'/api/settings');
+  assert.equal(result.status,200);
+  assert.equal(result.headers.get('cache-control'),'no-store');
+  assert.deepEqual(await result.json(),{language:'nl'});
+  const doubleSlash=await rawRequest(app.address().port,'//api/settings');
+  assert.deepEqual(JSON.parse(doubleSlash.body),{language:'nl'});
+  assert.equal((await fetch(origin+'/api/settings',{method:'POST'})).status,405);
+ } finally {await new Promise(ok=>app.close(ok));}
+});
+
+test('unsupported configuration falls back to auto without breaking API',async()=>{
+ const app=startServer({hostname:'127.0.0.1',listenPort:0,languagePreference:'de'});
+ await once(app,'listening');
+ try {
+  const data=await (await fetch(`http://127.0.0.1:${app.address().port}/api/settings`)).json();
+  assert.deepEqual(data,{language:'auto'});
+ } finally {await new Promise(ok=>app.close(ok));}
+});
+
+test('HA app manifest declares a language list with safe default',()=>{
+ const manifest=readFileSync(new URL('../config.yaml',import.meta.url),'utf8');
+ assert.match(manifest,/language: auto/);
+ assert.match(manifest,/language: list\(auto\|en\|nl\)/);
+});

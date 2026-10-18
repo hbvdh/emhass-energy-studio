@@ -4,9 +4,11 @@ import { startServer } from './server.mjs';
 // HA OS puts this app's validated options in /data/options.json.
 const optionsFile = process.env.HA_OPTIONS_PATH || '/data/options.json';
 let slug = '';
+let languagePreference = 'auto';
 try {
   const options = JSON.parse(await readFile(optionsFile, 'utf8'));
   slug = String(options.emhass_slug || '').trim();
+  languagePreference = ['auto', 'en', 'nl'].includes(options.language) ? options.language : 'auto';
 } catch (err) {
   console.warn(`Geen add-on configuratie gelezen uit ${optionsFile}: ${err.message}`);
 }
@@ -29,7 +31,8 @@ if (!valid) {
     hostname: '0.0.0.0',
     listenPort: 8099,
     upstreamUrl,
+    languagePreference,
     ingressOnly: true,
   });
-  console.log(`EMHASS Energy Studio v0.3.0 - Home Assistant Ingress actief op poort 8099. EMHASS ${upstreamUrl || 'niet geconfigureerd'}.`);
+  console.log(`EMHASS Energy Studio v0.3.1 - Home Assistant Ingress actief op poort 8099. EMHASS ${upstreamUrl || 'niet geconfigureerd'}.`);
 }
