@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.6 - Restore full repository after incomplete release
+- Recovered all repository, add-on, source, README and test files omitted by the v0.3.5 Git tree.
+- Preserved the fixed Docker image with ha_stats.mjs and its packaging regression test.
+- No change to energy calculations or configuration values.
+
 ## 0.3.5 - Fix add-on startup after HA cost statistics update
 - Include ha_stats.mjs in the Docker image; fixes ERR_MODULE_NOT_FOUND and restart loop in v0.3.4.
 - Add packaging regression test that stages the Dockerfile COPY instructions and loads the actual modules.
