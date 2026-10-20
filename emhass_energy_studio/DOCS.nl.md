@@ -34,4 +34,4 @@ Dat is een voorbeeld; gebruik de echte id van jouw bestaande EMHASS add-on. Star
 **Geen officiële EMHASS-add-on; los leesdashboard.**
 
 ## Taal
-Kies bij de add-onconfiguratie `language: auto`, `en` of `nl`. `auto` probeert de Home Assistant-taal te lezen via Ingress en valt terug op de browsertaal. `en` en `nl` gelden voor alle gebruikers. Sla op en start de add-on opnieuw.
+Kies bij de add-onconfiguratie `language: auto`, `en` of `nl`. `auto` probeert Home Assistant-taal te lezen via Ingress en valt terug op browsertaal. `en` en `nl` gelden voor alle gebruikers. Sla op en start de add-on opnieuw.

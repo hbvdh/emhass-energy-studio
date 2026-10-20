@@ -25,7 +25,7 @@ function json(res, code, data) {
 
 export function startServer({ hostname = host, listenPort = port, upstreamUrl = source, languagePreference = 'auto', haToken = process.env.SUPERVISOR_TOKEN || '', haEntities = {}, haBaseUrl = 'http://supervisor/core/api', haFetch = fetch, haClock, ingressOnly = process.env.INGRESS_ONLY === '1' } = {}) {
   const configuredLanguage = ['auto','en','nl'].includes(languagePreference) ? languagePreference : 'auto';
-  const readActuals=createHaActuals({token:haToken,entities:haEntities,base:haBaseUrl,fetchImpl:haFetch,...(haClock?{clock:haClock}:{})});
+  const readActuals = createHaActuals({token:haToken, entities:haEntities, base:haBaseUrl, fetchImpl:haFetch, ...(haClock ? {clock:haClock} : {})});
   let baseUrl;
   try {
     if (upstreamUrl) {
@@ -60,6 +60,7 @@ export function startServer({ hostname = host, listenPort = port, upstreamUrl = 
     if (pathname === '/health') return json(res, 200, { status: 'ok', configured: !!baseUrl });
     // Read-only, language-only response; never expose the add-on options or credentials.
     if (pathname === '/api/settings') return json(res, 200, { language: configuredLanguage });
+    // Only aggregate readings from specifically configured sensors. No general HA API proxy.
     if (pathname === '/api/live-actuals') return json(res, 200, await readActuals());
     if (pathname.startsWith('/api/')) {
       const paths = { '/api/plan': '/api/v1/plan', '/api/last-run': '/api/v1/last-run' };

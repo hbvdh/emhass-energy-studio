@@ -120,13 +120,25 @@ test('HA app manifest declares a language list with safe default',()=>{
  assert.match(manifest,/language: list\(auto\|en\|nl\)/);
 });
 
-test('Live readings endpoint permits only GET and no generic HA proxy',async()=>{
+
+test('Live readings endpoint never accepts writes or exposes generic HA endpoints', async()=>{
  const app=startServer({hostname:'127.0.0.1',listenPort:0});
  await once(app,'listening');
  try{
- const base=`http://127.0.0.1:${app.address().port}`;
- assert.equal((await fetch(base+'/api/live-actuals',{method:'POST'})).status,405);
- assert.equal((await fetch(base+'/api/live-actuals')).status,200);
- assert.equal((await fetch(base+'/api/states/sensor.any')).status,404);
+  const base=`http://127.0.0.1:${app.address().port}`;
+  assert.equal((await fetch(base+'/api/live-actuals',{method:'POST'})).status,405);
+  assert.equal((await fetch(base+'/api/live-actuals')).status,200);
+  assert.equal((await fetch(base+'/api/states/sensor.anything')).status,404);
  }finally{await new Promise(ok=>app.close(ok));}
+});
+
+
+test('Today cost KPI shows actual costs from HA and remaining EMHASS forecast',()=>{
+ const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+ assert.match(app,/actual\?\.net_cost_today_eur/);
+ assert.match(app,/actualCost\+daily\.today\.cost/);
+ assert.match(app,/kpi-cost-note/);
+ assert.match(html,/id="kpi-cost-actual"/);
+ assert.match(html,/id="kpi-cost-total"/);
 });

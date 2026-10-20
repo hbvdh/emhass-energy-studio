@@ -1,12 +1,20 @@
 # Changelog
 
-## 0.3.2 - Live sensor cards and actual day totals
-- Reads configured Home Assistant sensors through the internal Supervisor Core API.
-- Actual PV/net import today plus remaining EMHASS forecast, with projected daily total.
-- Battery/grid live status cards, automatic refresh and timestamp.
-- Hide Demo with a working live connection.
-- Missing midnight history is not silently treated as zero.
-- Actual net cost is marked unavailable until export tariff history can be verified.
+## 0.3.3 - Home Assistant Energy dashboard actual net costs
+- Cost sensors from the Home Assistant Energy dashboard (T1/T2 import cost and export compensation) are now used for actual net cost since local midnight.
+- Negative cost and compensation deltas are supported; unknown/missing states or incorrect monetary units display as unavailable instead of zero.
+- Today's main cost KPI uses actual-to-date plus remaining EMHASS forecast when both are available.
+- Optional cost entity IDs can be configured independently in the add-on options; default IDs match the original test installation.
+- No historical price re-calculation, tokens, new ports or write access required.
+
+
+## 0.3.2 - Live energy readings
+- Read-only Home Assistant Core API access with internal Supervisor token; no port forwarding or stored user tokens.
+- Actual PV and grid import so far today, remaining EMHASS forecast, projected total.
+- Live battery/grid status cards with 60s refresh and timestamp.
+- Hide Demo when live works; retain fallback on error.
+- Import price entity is collected but historical net costs remain unavailable until time-matched historical import/export rates can be verified.
+- Limited midnight meter baseline query; missing/reset data reported as unavailable rather than incorrect zero.
 
 
 ## 0.3.1 - Language configuration and bilingual docs

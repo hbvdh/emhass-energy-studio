@@ -6,14 +6,15 @@ Energy Studio is a separate, read-only web frontend. It never changes your exist
 
 ## Configuration
 
-Open the original EMHASS add-on info page in HA. The URL contains `/hassio/addon/<id>/info`. Copy the full add-on ID (for example `abc12345_emhass`) into Energy Studio's configuration:
+Open the original EMHASS add-on info page in HA. The URL contains `/hassio/addon/<id>/info`.
+Copy the full add-on ID (for example `abc12345_emhass`) into Energy Studio's configuration:
 
 ```yaml
 emhass_slug: abc12345_emhass
 language: auto
 ```
 
-The ID is an example. Save and restart Energy Studio. The app reads the EMHASS API on internal port 5000 through Home Assistant add-on DNS.
+The ID is an example. Save and restart Energy Studio. The app then reads the EMHASS API on internal port 5000 through HA add-on DNS.
 Only `GET /api/v1/plan` and `GET /api/v1/last-run` are proxied. If `emhass_slug` is empty, demo mode remains available.
 
 ## Language
@@ -22,7 +23,7 @@ Only `GET /api/v1/plan` and `GET /api/v1/last-run` are proxied. If `emhass_slug`
 - `en`: English for every user of this Energy Studio installation.
 - `nl`: Dutch for every user of this Energy Studio installation.
 
-An add-on-wide forced preference cannot provide different languages for different users. Set `auto` to allow per-user language detection. The frontend fetches only the language choice from the read-only `GET /api/settings` endpoint; the complete add-on options and credentials are never exposed.
+An add-on-wide forced preference cannot provide different languages for different users. Set `auto` to allow per-user language detection. The frontend fetches only the language choice from the read-only `GET /api/settings` endpoint; the complete add-on options, tokens and credentials are never exposed.
 
 ## Security
 

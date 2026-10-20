@@ -148,25 +148,27 @@ export function computeDailyCostForecasts(rows, now = new Date()) {
 }
 
 
-// Remaining import/PV energy until next Amsterdam midnight, independent of chart horizon.
-export function remainingEnergyToday(rows,field,now=new Date()){
- if(!rows.length)return {kwh:null,partial:true};
- const today=localDayKey(now);
- const tomorrow=new Date(Date.parse(today+'T12:00:00Z')+86400000).toISOString().slice(0,10);
- const start=now.getTime(),end=localMidnightUtcMs(tomorrow);
- if(start>=end)return {kwh:0,partial:false};
- const step=timeStepHours(rows)*3600000;
- let kwh=0,covered=0,invalid=false;
- for(let i=0;i<rows.length;i++){
-  const r=rows[i],from=r.date.getTime();
-  const period=i<rows.length-1?Math.min(step*2,Math.max(0,rows[i+1].date-from)):step;
-  const span=Math.max(0,Math.min(end,from+period)-Math.max(start,from));
-  if(!span)continue;
-  covered+=span;
-  if(r[field]==null){invalid=true;continue;}
-  kwh+=Math.max(0,r[field])*span/3600000/1000;
- }
- return {kwh:invalid||!covered?null:kwh,partial:covered<end-start-Math.min(step,MS_15M)};
+// Forecast energy for the *remaining* part of the local calendar day, regardless
+// of the selected 12/24/48-hour chart horizon.
+export function remainingEnergyToday(rows, field, now = new Date()) {
+  if (!rows.length) return {kwh:null, partial:true};
+  const key=localDayKey(now);
+  const tomorrow=new Date(Date.parse(`${key}T12:00:00Z`)+86400000).toISOString().slice(0,10);
+  const end=localMidnightUtcMs(tomorrow);
+  const start=now.getTime();
+  if(start>=end)return {kwh:0,partial:false};
+  const step=timeStepHours(rows)*3600000;
+  let result=0, covered=0, invalid=false;
+  for(let i=0;i<rows.length;i++) {
+    const row=rows[i];const from=row.date.getTime();
+    const interval=i<rows.length-1?Math.min(step*2,Math.max(0,rows[i+1].date-from)):step;
+    const span=Math.max(0,Math.min(end,from+interval)-Math.max(start,from));
+    if(!span)continue;
+    covered+=span;
+    if(row[field]===null || row[field]===undefined){invalid=true;continue;}
+    result+=Math.max(0,row[field])*span/3600000/1000;
+  }
+  return {kwh:invalid||!covered?null:result,partial:covered<end-start-Math.min(step,MS_15M)};
 }
 
 export function createDemo(now = new Date()) {

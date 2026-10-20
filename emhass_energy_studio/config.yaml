@@ -1,5 +1,5 @@
 name: EMHASS Energy Studio
-version: "0.3.2"
+version: "0.3.3"
 slug: emhass_energy_studio
 description: Moderne grafieken en een interactieve tabel voor bestaande EMHASS-plannen
 url: https://github.com/hbvdh/emhass-energy-studio
@@ -19,6 +19,7 @@ panel_admin: true
 options:
   emhass_slug: ""
   language: auto
+  # Adapt these entity IDs for another Home Assistant installation.
   import_t1: sensor.electricity_meter_energy_consumption_tarif_1
   import_t2: sensor.electricity_meter_energy_consumption_tarif_2
   export_t1: sensor.electricity_meter_energy_production_tarif_1
@@ -27,6 +28,10 @@ options:
   battery_now: sensor.pylontech_force_h3x_battery_power
   grid_now: sensor.pylontech_force_h3x_grid_total_power
   import_price: sensor.actuele_stroomprijs_all_in_2
+  import_cost_t1: sensor.electricity_meter_energy_consumption_tarif_1_cost
+  import_cost_t2: sensor.electricity_meter_energy_consumption_tarif_2_cost
+  export_comp_t1: sensor.electricity_meter_energy_production_tarif_1_compensation
+  export_comp_t2: sensor.electricity_meter_energy_production_tarif_2_compensation
 schema:
   emhass_slug: "str?"
   language: list(auto|en|nl)
@@ -38,3 +43,7 @@ schema:
   battery_now: str?
   grid_now: str?
   import_price: str?
+  import_cost_t1: str?
+  import_cost_t2: str?
+  export_comp_t1: str?
+  export_comp_t2: str?

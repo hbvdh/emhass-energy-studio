@@ -2,7 +2,7 @@
 
 [English instructions](../README.md) | [Nederlandse handleiding](../README.nl.md)
 
-A modern, **read-only** view of your EMHASS optimization: interactive graphs, 12/24/48-hour selection (24 by default), 28-row quarter-hour table, daily net cost forecasts and CSV export.
+A modern, **read-only** view of your EMHASS optimization: interactive graphs, 12/24/48-hour selection (24 by default), 28-row quarter-hour table, daily net cost forecasts, live battery and grid power, actual PV/grid totals, and CSV export.
 
 The original EMHASS add-on is not modified. Access is provided through Home Assistant Ingress without exposing another network port.
 

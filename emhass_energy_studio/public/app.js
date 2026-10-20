@@ -60,20 +60,32 @@ function updateView() {
   setText('kpi-cost-tomorrow',eur(daily.tomorrow.cost));
   setText('kpi-today-desc',translation(daily.today.partial ? 'cost.today.partial' : 'cost.today.full'));
   setText('kpi-tomorrow-desc',translation(daily.tomorrow.partial ? 'cost.tomorrow.partial' : 'cost.tomorrow.full'));
-  const actual=state.mode==='live'&&state.actuals?.status==='ok'?state.actuals:null;
-  for(const [name,field,measured] of [['pv','P_PV',actual?.pv_kwh??null],['import','P_grid',actual?.grid_import_kwh??null]]){
-   const prediction=remainingEnergyToday(state.rows,field),remaining=prediction.kwh;
-   const total=measured!==null&&remaining!==null?measured+remaining:null;
-   const fmt=value=>value===null?'—':`${num(value,1)} kWh`;
-   setText(`kpi-${name}-actual`,fmt(measured));
-   setText(`kpi-${name}-remaining`,fmt(remaining));
-   setText(`kpi-${name}-total`,fmt(total));
-   setText(`kpi-${name}`,fmt(total??remaining));
-   $(`kpi-${name}`).title=prediction.partial?translation('summary.partial'):'';
+  const actual=state.mode==='live' && state.actuals?.status==='ok'?state.actuals:null;
+  const energyMeasures=[
+    ['pv','P_PV',actual?.pv_kwh ?? null],
+    ['import','P_grid',actual?.grid_import_kwh ?? null],
+  ];
+  for(const [name,field,measured] of energyMeasures){
+    const prediction=remainingEnergyToday(state.rows,field);
+    const remaining=prediction.kwh;
+    const total=measured!==null&&remaining!==null?measured+remaining:null;
+    const formatKwh=value=>value===null?'—':`${num(value,1)} kWh`;
+    setText(`kpi-${name}-actual`,formatKwh(measured));
+    setText(`kpi-${name}-remaining`,formatKwh(remaining));
+    setText(`kpi-${name}-total`,formatKwh(total));
+    setText(`kpi-${name}`,formatKwh(total ?? remaining));
+    $(`kpi-${name}`).title=prediction.partial?translation('summary.partial'):'';
   }
-  setText('kpi-cost-actual','—');
+  const actualCost=actual?.net_cost_today_eur ?? null;
+  const projectedCost=actualCost!==null&&daily.today.cost!==null?actualCost+daily.today.cost:null;
+  setText('kpi-cost-actual',eur(actualCost));
   setText('kpi-cost-remaining',eur(daily.today.cost));
-  setText('kpi-cost-total','—');
+  setText('kpi-cost-total',eur(projectedCost));
+  setText('kpi-cost-today',eur(projectedCost??daily.today.cost));
+  if(projectedCost!==null) {
+    setText('kpi-today-desc',translation(daily.today.partial?'cost.today.estimatedPartial':'cost.today.estimated'));
+  }
+  $('kpi-cost-note').hidden=actualCost!==null;
   setText('kpi-soc',stats.maxSoc===null?'—':`${num(stats.maxSoc,0)} %`);
   updateLiveCards();
 
@@ -81,18 +93,22 @@ function updateView() {
   updateSelection(); renderTable();
 }
 function updateLiveCards(){
- const live=state.mode==='live'&&state.actuals?.status==='ok'?state.actuals:null;
- function render(key,value,isBattery){
-  const valid=value!==null&&Number.isFinite(value),significant=valid&&Math.abs(value)>=0.06;
-  const status=!valid?'unavailable':!significant?'idle':isBattery?(value>0?'discharging':'charging'):(value>0?'import':'export');
-  setText(`live-${key}-value`,valid?`${num(Math.abs(value),2)} kW`:'—');
-  setText(`live-${key}-state`,translation(`live.${status}`));
-  $(`live-${key}-value`).closest('.live-card').dataset.state=status;
-  setText(`live-${key}-icon`,status==='charging'?'↓':status==='discharging'?'↑':status==='import'?'⇦':status==='export'?'⇨':'⇄');
- }
- render('battery',live?.battery_power_kw??null,true);
- render('grid',live?.grid_power_kw??null,false);
- setText('live-refreshed',live?.measured_at?translation('live.updated',{time:new Intl.DateTimeFormat(language==='nl'?'nl-NL':'en-GB',{timeZone:TIMEZONE,hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date(live.measured_at))}):'—');
+  const live=state.mode==='live'&&state.actuals?.status==='ok'?state.actuals:null;
+  const batt=live?.battery_power_kw ?? null;
+  const grid=live?.grid_power_kw ?? null;
+  const render=(key,value,isBattery)=>{
+    const good=value!==null&&Number.isFinite(value);
+    const significant=good&&Math.abs(value)>=0.06;
+    const status=!good?'unavailable':!significant?'idle':isBattery?(value>0?'discharging':'charging'):(value>0?'import':'export');
+    setText(`live-${key}-value`,good?`${num(Math.abs(value),2)} kW`:'—');
+    setText(`live-${key}-state`,translation(`live.${status}`));
+    const card=$(`live-${key}-value`).closest('.live-card');
+    card.dataset.state=status;
+    setText(`live-${key}-icon`,status==='charging'?'↓':status==='discharging'?'↑':status==='import'?'⇦':status==='export'?'⇨':'⇄');
+  };
+  render('battery',batt,true);
+  render('grid',grid,false);
+  setText('live-refreshed',live?.measured_at?translation('live.updated',{time:new Intl.DateTimeFormat(language==='nl'?'nl-NL':'en-GB',{timeZone:TIMEZONE,hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date(live.measured_at))}):'—');
 }
 function updateSelection() {
   const row = state.visible.find(r=>r.timestamp===state.selected);
@@ -353,7 +369,8 @@ function refreshLanguage() {
   setLanguage(resolveLanguage(languagePreference, window.parent, navigator));
 }
 async function init(){
-  // Fetch only the read-only language preference; never request add-on secrets.
+  // The add-on-wide override is fetched once; 'auto' remains the safe fallback.
+  // This endpoint exposes ONLY the language setting, never EMHASS credentials.
   try {
     const settings = await fetchJson('./api/settings');
     languagePreference = ['auto','en','nl'].includes(settings.language) ? settings.language : 'auto';

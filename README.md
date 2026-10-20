@@ -58,5 +58,19 @@ npm test
 ```
 
 The server uses Node.js without third-party runtime packages. This is experimental, unofficial community software, not endorsed by EMHASS or Home Assistant. License: [MIT](LICENSE).
-### Actual energy readings (v0.3.2)
-Enable `homeassistant_api: true` and configure the eight energy entity IDs as needed. The add-on reads them using the internal Supervisor token, not a personal token, and exposes only the calculated measurements. PV and grid import show actual energy since midnight, remaining EMHASS forecast and expected total. Current battery/grid power refreshes every minute. **Actual net costs remain unavailable** until time-matched export compensation can be verified; the cost amount shown is the remaining EMHASS forecast.
+
+### Live energy readings (v0.3.2)
+The app fetches current values of the configured Home Assistant energy sensors using `homeassistant_api: true` and an internal Supervisor token (never exposed to the browser). The sensor defaults match the first test installation and must be adjusted for other systems in the app configuration.
+- **PV / grid import:** actual energy since midnight (cumulative meter difference), remaining EMHASS forecast to midnight, total expected today.
+- **Battery / grid status:** current power values, refreshed automatically every minute.
+- **Today net cost:** actual import costs (T1 + T2) minus export compensation (T1 + T2), from HA Energy monetary counters since midnight. The remaining EMHASS forecast is added for the expected total; this is a prediction, not a final bill. If a cost sensor or its midnight history is missing, the actual amount remains unavailable.
+- Missing Recorder midnight snapshots and meter resets produce dashes, not fabricated figures.
+
+Default price entity: `sensor.actuele_stroomprijs_all_in_2`; current price alone does not reconstruct historical spending.
+
+### Net energy cost from Home Assistant (v0.3.3)
+
+The Today net energy cost card now reads the Home Assistant Energy dashboard's cumulative money sensors for grid import T1/T2 and grid export compensation T1/T2. It subtracts each sensor's state at local midnight from the current reading, then calculates **(import T1 + import T2) − (compensation T1 + compensation T2)**. The dashboard shows this realised amount next to the remaining EMHASS plan and the expected sum. It accepts negative amounts, including when market prices are negative. Fixed standing charges are not added unless Home Assistant's source cost sensors already include them.
+
+Four configurable add-on keys default to `sensor.electricity_meter_energy_consumption_tarif_1_cost`, `sensor.electricity_meter_energy_consumption_tarif_2_cost`, `sensor.electricity_meter_energy_production_tarif_1_compensation`, and `sensor.electricity_meter_energy_production_tarif_2_compensation`. If sensors are unavailable, in a different currency, or lack a midnight baseline in the HA Recorder, the actual amount is shown as unavailable rather than a fabricated value.
+
