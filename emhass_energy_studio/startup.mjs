@@ -38,5 +38,5 @@ if (!valid) {
     haEntities,
     ingressOnly: true,
   });
-  console.log(`EMHASS Energy Studio v0.3.4 - Home Assistant Ingress actief op poort 8099. EMHASS ${upstreamUrl || 'niet geconfigureerd'}.`);
+  console.log(`EMHASS Energy Studio v0.3.5 - Home Assistant Ingress actief op poort 8099. EMHASS ${upstreamUrl || 'niet geconfigureerd'}.`);
 }

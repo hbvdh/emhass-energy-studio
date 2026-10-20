@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.5 - Fix add-on startup after HA cost statistics update
+- Include ha_stats.mjs in the Docker image; fixes ERR_MODULE_NOT_FOUND and restart loop in v0.3.4.
+- Add packaging regression test that stages the Dockerfile COPY instructions and loads the actual modules.
+- No changes to EMHASS optimization, entities or cost calculation.
+
 ## 0.3.4 - Match Home Assistant Energy statistics for actual costs
 - Actual net energy cost now sums the same hourly Recorder statistic changes as the Home Assistant Energy totals table.
 - Uses Home Assistant's internal Supervisor WebSocket API, read-only, no additional token or port.
