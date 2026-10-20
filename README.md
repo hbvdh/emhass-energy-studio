@@ -58,3 +58,5 @@ npm test
 ```
 
 The server uses Node.js without third-party runtime packages. This is experimental, unofficial community software, not endorsed by EMHASS or Home Assistant. License: [MIT](LICENSE).
+### Actual energy readings (v0.3.2)
+Enable `homeassistant_api: true` and configure the eight energy entity IDs as needed. The add-on reads them using the internal Supervisor token, not a personal token, and exposes only the calculated measurements. PV and grid import show actual energy since midnight, remaining EMHASS forecast and expected total. Current battery/grid power refreshes every minute. **Actual net costs remain unavailable** until time-matched export compensation can be verified; the cost amount shown is the remaining EMHASS forecast.

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.2 - Live sensor cards and actual day totals
+- Reads configured Home Assistant sensors through the internal Supervisor Core API.
+- Actual PV/net import today plus remaining EMHASS forecast, with projected daily total.
+- Battery/grid live status cards, automatic refresh and timestamp.
+- Hide Demo with a working live connection.
+- Missing midnight history is not silently treated as zero.
+- Actual net cost is marked unavailable until export tariff history can be verified.
+
+
 ## 0.3.1 - Language configuration and bilingual docs
 - Add-on Configuration now offers language: auto, en or nl (default: auto).
 - Forced language applies to the entire installation; auto detects HA account locale where accessible, then browser locale.

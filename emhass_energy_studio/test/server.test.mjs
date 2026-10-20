@@ -119,3 +119,14 @@ test('HA app manifest declares a language list with safe default',()=>{
  assert.match(manifest,/language: auto/);
  assert.match(manifest,/language: list\(auto\|en\|nl\)/);
 });
+
+test('Live readings endpoint permits only GET and no generic HA proxy',async()=>{
+ const app=startServer({hostname:'127.0.0.1',listenPort:0});
+ await once(app,'listening');
+ try{
+ const base=`http://127.0.0.1:${app.address().port}`;
+ assert.equal((await fetch(base+'/api/live-actuals',{method:'POST'})).status,405);
+ assert.equal((await fetch(base+'/api/live-actuals')).status,200);
+ assert.equal((await fetch(base+'/api/states/sensor.any')).status,404);
+ }finally{await new Promise(ok=>app.close(ok));}
+});

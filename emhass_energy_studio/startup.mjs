@@ -1,14 +1,17 @@
 import { readFile } from 'node:fs/promises';
 import { startServer } from './server.mjs';
+import {SENSOR_DEFAULTS} from './ha_actuals.mjs';
 
 // HA OS puts this app's validated options in /data/options.json.
 const optionsFile = process.env.HA_OPTIONS_PATH || '/data/options.json';
 let slug = '';
 let languagePreference = 'auto';
+let haEntities={...SENSOR_DEFAULTS};
 try {
   const options = JSON.parse(await readFile(optionsFile, 'utf8'));
   slug = String(options.emhass_slug || '').trim();
   languagePreference = ['auto', 'en', 'nl'].includes(options.language) ? options.language : 'auto';
+  haEntities=Object.fromEntries(Object.entries(SENSOR_DEFAULTS).map(([key,fallback])=>[key,String(options[key]??fallback).trim()]));
 } catch (err) {
   console.warn(`Geen add-on configuratie gelezen uit ${optionsFile}: ${err.message}`);
 }
@@ -32,7 +35,8 @@ if (!valid) {
     listenPort: 8099,
     upstreamUrl,
     languagePreference,
+    haEntities,
     ingressOnly: true,
   });
-  console.log(`EMHASS Energy Studio v0.3.1 - Home Assistant Ingress actief op poort 8099. EMHASS ${upstreamUrl || 'niet geconfigureerd'}.`);
+  console.log(`EMHASS Energy Studio v0.3.2 - Home Assistant Ingress actief op poort 8099. EMHASS ${upstreamUrl || 'niet geconfigureerd'}.`);
 }

@@ -1,4 +1,4 @@
-import { TIMEZONE, normalizePlan, validateRun, computeStats, computeDailyCostForecasts, createDemo } from './data.js';
+import { TIMEZONE, normalizePlan, validateRun, computeStats, computeDailyCostForecasts, remainingEnergyToday, createDemo } from './data.js';
 import { resolveLanguage, normalizeLanguageTag, t, translateStatic } from './i18n.js';
 
 const $ = id => document.getElementById(id);
@@ -18,7 +18,7 @@ const eur = n => n === null ? '—' : new Intl.NumberFormat(language === 'nl' ? 
 const fmtPower = n => n === null ? '—' : `${num(n/1000,2)} kW`;
 const fmtPrice = n => n === null ? '—' : `${num(n,3)} €`;
 
-const state = { mode:'live', plan:null, run:null, rows:[], visible:[], selected:null, hovered:null, tooltipPinned:false, hours:24, filter:'all',query:'',page:0,sortAsc:true,disabledSeries:new Set(), warnings:[], loading:false };
+const state = { actuals:null, mode:'live', plan:null, run:null, rows:[], visible:[], selected:null, hovered:null, tooltipPinned:false, hours:24, filter:'all',query:'',page:0,sortAsc:true,disabledSeries:new Set(), warnings:[], loading:false };
 const PAGE_SIZE=28;
 const chartDefs=[
   {id:'chart-energy',kind:'energy',series:[{field:'P_Load',label:'field.load',color:'#9b90ff'},{field:'P_PV',label:'PV',color:'#29dac5',area:true},{field:'P_grid',label:'field.grid',color:'#f7b86d'}]},
@@ -60,11 +60,39 @@ function updateView() {
   setText('kpi-cost-tomorrow',eur(daily.tomorrow.cost));
   setText('kpi-today-desc',translation(daily.today.partial ? 'cost.today.partial' : 'cost.today.full'));
   setText('kpi-tomorrow-desc',translation(daily.tomorrow.partial ? 'cost.tomorrow.partial' : 'cost.tomorrow.full'));
-  setText('kpi-pv',stats.pv===null?'—':`${num(stats.pv,1)} kWh`);
-  setText('kpi-import',stats.imp===null?'—':`${num(stats.imp,1)} kWh`); setText('kpi-soc',stats.maxSoc===null?'—':`${num(stats.maxSoc,0)} %`);
+  const actual=state.mode==='live'&&state.actuals?.status==='ok'?state.actuals:null;
+  for(const [name,field,measured] of [['pv','P_PV',actual?.pv_kwh??null],['import','P_grid',actual?.grid_import_kwh??null]]){
+   const prediction=remainingEnergyToday(state.rows,field),remaining=prediction.kwh;
+   const total=measured!==null&&remaining!==null?measured+remaining:null;
+   const fmt=value=>value===null?'—':`${num(value,1)} kWh`;
+   setText(`kpi-${name}-actual`,fmt(measured));
+   setText(`kpi-${name}-remaining`,fmt(remaining));
+   setText(`kpi-${name}-total`,fmt(total));
+   setText(`kpi-${name}`,fmt(total??remaining));
+   $(`kpi-${name}`).title=prediction.partial?translation('summary.partial'):'';
+  }
+  setText('kpi-cost-actual','—');
+  setText('kpi-cost-remaining',eur(daily.today.cost));
+  setText('kpi-cost-total','—');
+  setText('kpi-soc',stats.maxSoc===null?'—':`${num(stats.maxSoc,0)} %`);
+  updateLiveCards();
 
   for(const def of chartDefs) drawChart(def);
   updateSelection(); renderTable();
+}
+function updateLiveCards(){
+ const live=state.mode==='live'&&state.actuals?.status==='ok'?state.actuals:null;
+ function render(key,value,isBattery){
+  const valid=value!==null&&Number.isFinite(value),significant=valid&&Math.abs(value)>=0.06;
+  const status=!valid?'unavailable':!significant?'idle':isBattery?(value>0?'discharging':'charging'):(value>0?'import':'export');
+  setText(`live-${key}-value`,valid?`${num(Math.abs(value),2)} kW`:'—');
+  setText(`live-${key}-state`,translation(`live.${status}`));
+  $(`live-${key}-value`).closest('.live-card').dataset.state=status;
+  setText(`live-${key}-icon`,status==='charging'?'↓':status==='discharging'?'↑':status==='import'?'⇦':status==='export'?'⇨':'⇄');
+ }
+ render('battery',live?.battery_power_kw??null,true);
+ render('grid',live?.grid_power_kw??null,false);
+ setText('live-refreshed',live?.measured_at?translation('live.updated',{time:new Intl.DateTimeFormat(language==='nl'?'nl-NL':'en-GB',{timeZone:TIMEZONE,hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date(live.measured_at))}):'—');
 }
 function updateSelection() {
   const row = state.visible.find(r=>r.timestamp===state.selected);
@@ -247,11 +275,13 @@ async function fetchJson(path){const r=await fetch(path,{cache:'no-store',header
 async function loadLive(){
   if(state.loading)return;state.loading=true;$('reload').disabled=true;$('refresh-icon').textContent='◌';
   try{
-    const [planRes,runRes]=await Promise.allSettled([fetchJson('./api/plan'),fetchJson('./api/last-run')]);
+    const [planRes,runRes,actualsRes]=await Promise.allSettled([fetchJson('./api/plan'),fetchJson('./api/last-run'),fetchJson('./api/live-actuals')]);
     if(planRes.status==='rejected')throw planRes.reason;
     const plan=planRes.value,run=runRes.status==='fulfilled'?runRes.value:null;
     const rows=normalizePlan(plan,language);
     state.plan=plan;state.run=run;state.rows=rows;state.warnings=validateRun(plan,run,new Date(),language);
+    state.actuals=actualsRes.status==='fulfilled'?actualsRes.value:null;
+    $('demo-mode').hidden=true;
     if(runRes.status==='rejected')state.warnings.push(translation('status.lastRunUnknown'));
     updateView();
     const dt=plan.generated_at?formatter.format(new Date(plan.generated_at)):translation('status.unknown');
@@ -262,18 +292,20 @@ async function loadLive(){
     setText('status-meta',`${run?.action||'naive-mpc-optim'} · ${age===null?translation('status.ageUnknown'):translation('status.ageMinutes',{minutes:age})} · EMHASS ${run?.emhass_version||'—'}`);
   }catch(e){
     if(!state.rows.length){state.plan=null;state.rows=[];updateView();}
+    state.actuals=null;updateLiveCards();
+    $('demo-mode').hidden=false;
     status('bad',translation('status.noLive'),translation('status.checkConnection'));
     showMessage(translation('status.errorHelp',{error:e.message}));
     setText('status-meta',translation('status.liveUnavailable'));
   }finally{state.loading=false;$('reload').disabled=false;$('refresh-icon').textContent='↻';}
 }
 function loadDemo(){
-  const {plan,run}=createDemo();state.plan=plan;state.run=run;state.rows=normalizePlan(plan,language);state.warnings=[];
+  const {plan,run}=createDemo();state.plan=plan;state.run=run;state.rows=normalizePlan(plan,language);state.warnings=[];state.actuals=null;
   updateView();status('',translation('status.demoTitle'),translation('status.demoDetail'));
   setText('status-meta',translation('status.demoMeta',{count:state.rows.length}));
   showMessage(translation('status.demoNotice'));
 }
-function setMode(mode){state.mode=mode;state.hovered=null;state.selected=null;state.page=0;updateModes();if(mode==='demo')loadDemo();else{state.rows=[];updateView();loadLive();}}
+function setMode(mode){state.mode=mode;state.hovered=null;state.selected=null;state.page=0;updateModes();if(mode==='demo')loadDemo();else{state.rows=[];state.actuals=null;updateView();loadLive();}}
 function attachEvents(){
   // Pinned mobile detail panel stays open after releasing a finger.
   // Dismiss with its close button or by touching anywhere outside a chart.

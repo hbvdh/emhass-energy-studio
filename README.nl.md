@@ -58,3 +58,5 @@ npm test
 ```
 
 De Node.js-server heeft geen externe runtime-pakketten nodig. Dit is experimentele, onofficiële community-software, niet officieel verbonden aan EMHASS of Home Assistant. Licentie: [MIT](LICENSE).
+### Actuele energiegegevens (v0.3.2)
+Met `homeassistant_api: true` worden uitsluitend de ingestelde energiesensoren gelezen via de interne Supervisor-token. PV en netimport tonen de werkelijkheid sinds middernacht, resterende EMHASS-voorspelling en het totaal. De twee live vermogens verversen elke minuut. **De werkelijke netto kosten zijn nog niet beschikbaar** zonder een historische terugleververgoeding: de kostenkaart toont vooralsnog de resterende prognose.
