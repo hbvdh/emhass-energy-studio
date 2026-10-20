@@ -63,14 +63,14 @@ De Node.js-server heeft geen externe runtime-pakketten nodig. Dit is experimente
 Met `homeassistant_api: true` leest de add-on uitsluitend de ingestelde energiesensoren via Home Assistant en een interne Supervisor-token. De token wordt niet naar de browser gestuurd. Pas voor andere installaties de sensor-ID's in de add-onconfiguratie aan.
 - **PV / netimport:** gemeten energie sinds 00:00, resterende EMHASS-prognose tot middernacht en totaalverwachting vandaag.
 - **Batterij / net:** actuele vermogens; automatische vernieuwing elke minuut.
-- **Netto kosten vandaag:** echte afnamekosten (T1 + T2) minus terugleververgoeding (T1 + T2), afkomstig van de geldsensoren van het HA Energiedashboard vanaf middernacht. De resterende EMHASS-prognose wordt toegevoegd voor het verwachte dagtotaal. Ontbrekende sensoren of historie leveren een streepje op.
+- **Netto kosten vandaag:** echte afnamekosten (T1 + T2) minus terugleververgoeding (T1 + T2), afkomstig van de geldsensoren van het HA Energiedashboard vanaf middernacht. De resterende EMHASS-prognose wordt toegevoegd voor een voorlopige dagverwachting. Ontbrekende sensoren of statistieken leveren een streepje op.
 - Bij ontbrekende middernachthistorie of een reset van de meter verschijnen streepjes, geen verzonnen cijfers.
 
 Standaard prijssensor: `sensor.actuele_stroomprijs_all_in_2`. De huidige prijs is niet voldoende om historische kosten te berekenen.
 
-### Werkelijke netto kosten via Home Assistant (v0.3.3)
+### Werkelijke netto kosten via Home Assistant (v0.3.4)
 
-De kaart voor vandaag gebruikt nu de cumulatieve kostensensoren van het Home Assistant Energiedashboard: afnamekosten T1/T2 en terugleververgoedingen T1/T2. Van iedere sensor wordt de stand rond lokale middernacht afgetrokken. Netto kosten zijn vervolgens **afnamekosten T1 + T2 minus terugleververgoeding T1 + T2**. Ook negatieve kosten/vergoedingen blijven behouden. Vaste kosten zitten er alleen in wanneer Home Assistant ze zelf al in die sensoren verwerkt.
+De kaart voor vandaag gebruikt nu de cumulatieve kostensensoren van het Home Assistant Energiedashboard: afnamekosten T1/T2 en terugleververgoedingen T1/T2. Voor iedere kostensensor worden de Home Assistant Recorder-statistieken per uur vanaf lokale middernacht opgeteld. Netto kosten zijn vervolgens **afnamekosten T1 + T2 minus terugleververgoeding T1 + T2**. De huidige, onvolledige klokuur kan nog ontbreken in de geregistreerde kosten; daardoor is het verwachte eindtotaal voorlopig. Ook negatieve kosten/vergoedingen blijven behouden. Vaste kosten zitten er alleen in wanneer Home Assistant ze zelf al in die sensoren verwerkt.
 
-De vier entity-ID's zijn afzonderlijk instelbaar; standaard gebruiken we de bevestigde Energiedashboard-sensoren (`..._cost` en `..._compensation`). Ontbreekt een sensor, de euro-eenheid of de stand bij middernacht, dan verschijnt een streepje en geen onjuist bedrag.
+De vier entity-ID's zijn afzonderlijk instelbaar; standaard gebruiken we de bevestigde Energiedashboard-sensoren (`..._cost` en `..._compensation`). Ontbreekt een sensor, de euro-eenheid of de geregistreerde statistieken, dan verschijnt een streepje en geen onjuist bedrag.
 

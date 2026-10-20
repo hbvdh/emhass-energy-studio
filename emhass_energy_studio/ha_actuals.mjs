@@ -1,5 +1,6 @@
 // Read-only, fixed-sensor Home Assistant data source. No generic HA proxy.
 import {localDayKey,localMidnightUtcMs} from './public/data.js';
+import {energyDashboardCost,getCostStatistics} from './ha_stats.mjs';
 
 export const SENSOR_DEFAULTS = Object.freeze({
   import_t1:'sensor.electricity_meter_energy_consumption_tarif_1',
@@ -17,7 +18,7 @@ export const SENSOR_DEFAULTS = Object.freeze({
 });
 const ENERGY_KEYS = ['import_t1','import_t2','export_t1','export_t2','pv_total'];
 const MONEY_KEYS=['import_cost_t1','import_cost_t2','export_comp_t1','export_comp_t2'];
-const HISTORY_KEYS=[...ENERGY_KEYS,...MONEY_KEYS];
+const HISTORY_KEYS=[...ENERGY_KEYS]; // Costs come from Recorder statistics, not midnight state deltas.
 const ENTITY_PATTERN = /^(sensor|input_number)\.[a-z0-9_]+$/;
 function reading(value) {
   if(value == null || value === '' || ['unknown','unavailable','none'].includes(String(value).toLowerCase()))return null;
@@ -73,16 +74,6 @@ export function calculateDayActuals({now,midnightSamples,states,entities}) {
     deltas[key]=!entity?null:deltaKwh(midnightSamples[entity]??null,energyKwh(states[entity]));
   }
   const sum=(keys)=>keys.every(k=>deltas[k]!==null)?keys.reduce((acc,k)=>acc+deltas[k],0):null;
-  // Cumulative monetary totals from HA Energy dashboard, including signed deltas.
-  const money={};
-  for(const key of MONEY_KEYS) {
-    const id=entities[key];
-    money[key]=!id?null:deltaMoney(midnightSamples[id]??null,moneyEuro(states[id]));
-  }
-  const moneySum=keys=>keys.every(k=>money[k]!==null)?keys.reduce((a,k)=>a+money[k],0):null;
-  const importCost=moneySum(['import_cost_t1','import_cost_t2']);
-  const exportComp=moneySum(['export_comp_t1','export_comp_t2']);
-  const netCost=importCost!==null&&exportComp!==null?importCost-exportComp:null;
   return {
     measured_at:now.toISOString(),
     day:localDayKey(now),
@@ -92,14 +83,14 @@ export function calculateDayActuals({now,midnightSamples,states,entities}) {
     battery_power_kw:powerKw(states[entities.battery_now]),
     grid_power_kw:powerKw(states[entities.grid_now]),
     current_import_price_eur_kwh:reading(states[entities.import_price]?.state),
-    // Use the Energy dashboard’s own money sensors, not current market prices.
-    import_cost_today_eur:importCost,
-    export_compensation_today_eur:exportComp,
-    net_cost_today_eur:netCost,
-    net_cost_status:netCost!==null?'ok':'incomplete_cost_sensor_history',
+    // Actual cost is filled separately from Recorder's hourly statistics.
+    import_cost_today_eur:null,
+    export_compensation_today_eur:null,
+    net_cost_today_eur:null,
+    net_cost_status:'statistics_unavailable',
   };
 }
-export function createHaActuals({token, entities, base='http://supervisor/core/api', fetchImpl=fetch, clock=()=>new Date()}) {
+export function createHaActuals({token, entities, base='http://supervisor/core/api', fetchImpl=fetch, clock=()=>new Date(), statisticsFetch=getCostStatistics}) {
   const verified=validateEntityConfig(entities);
   const urls=Object.values(verified).filter(Boolean);
   const unique=[...new Set(urls)];
@@ -117,8 +108,8 @@ export function createHaActuals({token, entities, base='http://supervisor/core/a
     const now=clock();const day=localDayKey(now);const midnight=localMidnightUtcMs(day);
     try {
       let samples=baselineDay===day?baseline:null;
-      // One bounded request daily, limited to 5 energy + 4 money counters and a
-      // two-second interval. HA Recorder provides the value at the interval start.
+      // One bounded request daily for the five kWh counters only.
+      // Cost counters use the Recorder statistics API, avoiding raw state reset errors.
       if(!samples){
         const ids=[...new Set(HISTORY_KEYS.map(k=>verified[k]).filter(Boolean))];
         const url=new URL(`${canonical}/history/period/${encodeURIComponent(new Date(midnight).toISOString())}`);
@@ -146,6 +137,17 @@ export function createHaActuals({token, entities, base='http://supervisor/core/a
       }));
       const states=Object.fromEntries(fetched);
       const result=calculateDayActuals({now,midnightSamples:samples,states,entities:verified});
+      // Home Assistant's Energy source table sums Recorder's statistic.change
+      // for each hourly period. It does not subtract two raw entity states.
+      // Do not replace an unavailable result with the old (potentially wrong) delta.
+      const validMoney=MONEY_KEYS.every(key=>moneyEuro(states[verified[key]])!==null);
+      if(validMoney){
+        try {
+          const statistics=await statisticsFetch({token,entities:verified,startTime:new Date(midnight),endTime:now});
+          const cost=energyDashboardCost(statistics,verified);
+          if(cost)Object.assign(result,cost);
+        } catch { /* Preserve safe unavailable status; other KPIs remain usable */ }
+      }
       return {status:'ok',...result};
     }catch(e){return {status:'unavailable',reason:e.message};}
   }

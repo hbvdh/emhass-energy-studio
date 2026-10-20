@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.4 - Match Home Assistant Energy statistics for actual costs
+- Actual net energy cost now sums the same hourly Recorder statistic changes as the Home Assistant Energy totals table.
+- Uses Home Assistant's internal Supervisor WebSocket API, read-only, no additional token or port.
+- Missing statistics return unavailable rather than an inaccurate raw counter delta.
+- PV production and grid import actuals are unchanged.
+
 ## 0.3.3 - Home Assistant Energy dashboard actual net costs
 - Cost sensors from the Home Assistant Energy dashboard (T1/T2 import cost and export compensation) are now used for actual net cost since local midnight.
 - Negative cost and compensation deltas are supported; unknown/missing states or incorrect monetary units display as unavailable instead of zero.

@@ -85,7 +85,8 @@ function updateView() {
   if(projectedCost!==null) {
     setText('kpi-today-desc',translation(daily.today.partial?'cost.today.estimatedPartial':'cost.today.estimated'));
   }
-  $('kpi-cost-note').hidden=actualCost!==null;
+  setText('kpi-cost-note',translation(actualCost!==null?'summary.costHourly':'summary.costIncomplete'));
+  $('kpi-cost-note').hidden=false;
   setText('kpi-soc',stats.maxSoc===null?'—':`${num(stats.maxSoc,0)} %`);
   updateLiveCards();
 

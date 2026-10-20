@@ -24,7 +24,7 @@ test('Cumulative counters: sum tariffs and preserve import/export separately',()
   assert.equal(x.grid_power_kw,-.053);
   assert.equal(x.current_import_price_eur_kwh,.3206);
   assert.equal(x.net_cost_today_eur,null);
-  assert.equal(x.net_cost_status,'incomplete_cost_sensor_history');
+  assert.equal(x.net_cost_status,'statistics_unavailable');
 });
 
 test('Counters do not fabricate energy from missing, unavailable or reset data',()=>{
@@ -43,7 +43,7 @@ test('Read-only HA API uses only configured entity states and a short midnight w
     res.setHeader('Content-Type','application/json');
     if(req.url.startsWith('/core/api/history/period/')) {
       const u=new URL(req.url,'http://localhost');
-      assert.equal(u.searchParams.get('filter_entity_id').split(',').length,9);
+      assert.equal(u.searchParams.get('filter_entity_id').split(',').length,5);
       const stamp=new Date(localMidnightUtcMs('2026-10-20')-200).toISOString();
       const groups=[...u.searchParams.get('filter_entity_id').split(',')].map(id=>[{entity_id:id,state:'100',last_changed:stamp}]);
       res.end(JSON.stringify(groups));
@@ -85,40 +85,20 @@ test('Real history missing at midnight is treated as unavailable, not zero',()=>
 });
 
 
-test('HA Energy cost sensors: T1 and T2 costs minus export compensation; signed amounts',()=>{
-  const entities=validateEntityConfig();
-  const midnight={};const states={};
-  const euro={unit_of_measurement:'EUR'};
-  const opening={import_cost_t1:100,import_cost_t2:80,export_comp_t1:15,export_comp_t2:12};
-  const closing={import_cost_t1:100.60,import_cost_t2:80.25,export_comp_t1:15.10,export_comp_t2:12.05};
-  for(const [key,initial] of Object.entries(opening)){
-    const id=entities[key];midnight[id]=initial;
-    states[id]={state:String(closing[key]),attributes:euro};
-  }
-  const today=calculateDayActuals({now:new Date('2026-10-20T12:00:00Z'),midnightSamples:midnight,states,entities});
-  assert.ok(Math.abs(today.import_cost_today_eur-.85)<1e-10);
-  assert.ok(Math.abs(today.export_compensation_today_eur-.15)<1e-10);
-  assert.ok(Math.abs(today.net_cost_today_eur-.70)<1e-10);
-  assert.equal(today.net_cost_status,'ok');
+test('Money helpers still validate units and retain negative values',()=>{
   assert.ok(Math.abs(deltaMoney(12,11.8)+0.2)<1e-10);
   assert.equal(moneyEuro({state:'-1.42',attributes:{unit_of_measurement:'€'}}),-1.42);
+  assert.equal(moneyEuro({state:'4.3',attributes:{unit_of_measurement:'USD'}}),null);
 });
 
-test('Cost sensors missing, invalid units or missing midnight sample must never become zero',()=>{
-  const entities=validateEntityConfig();
-  const baseline={};const states={};
-  for(const key of ['import_cost_t1','import_cost_t2','export_comp_t1','export_comp_t2']) {
-    const id=entities[key];baseline[id]=50;
-    states[id]={state:'50.5',attributes:{unit_of_measurement:'EUR'}};
-  }
-  let v=calculateDayActuals({now:new Date('2026-10-20T12:00:00Z'),midnightSamples:baseline,states,entities});
-  assert.ok(Math.abs(v.net_cost_today_eur)<1e-10); // 2 x 0.5 import, 2 x 0.5 compensation
-  states[entities.export_comp_t1]={state:'50.5',attributes:{unit_of_measurement:'USD'}};
-  v=calculateDayActuals({now:new Date('2026-10-20T12:00:00Z'),midnightSamples:baseline,states,entities});
-  assert.equal(v.net_cost_today_eur,null);
-  delete baseline[entities.import_cost_t2];
-  v=calculateDayActuals({now:new Date('2026-10-20T12:00:00Z'),midnightSamples:baseline,states,entities});
-  assert.equal(v.net_cost_today_eur,null);
-  assert.equal(moneyEuro({state:'4.3',attributes:{unit_of_measurement:'USD'}}),null);
-  assert.equal(deltaMoney(null,2),null);
+test('Real net cost is not inferred from raw monetary sensor state differences',()=>{
+ const entities=validateEntityConfig(),baseline={},states={};
+ const keys=['import_cost_t1','import_cost_t2','export_comp_t1','export_comp_t2'];
+ for (const key of keys) {
+   const entity=entities[key]; baseline[entity]=50;
+   states[entity]={state:'52',attributes:{unit_of_measurement:'EUR'}};
+ }
+ const d=calculateDayActuals({now:new Date('2026-10-20T12:00:00Z'),midnightSamples:baseline,states,entities});
+ assert.equal(d.net_cost_today_eur,null);
+ assert.equal(d.net_cost_status,'statistics_unavailable');
 });

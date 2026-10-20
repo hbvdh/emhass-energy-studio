@@ -1,9 +1,11 @@
 // UI translations. No remote service and no change to EMHASS API fields.
 export const messages = {
   nl: {
+    'summary.actualCost': 'Werkelijk (HA, per uur)',
     'summary.actual': 'Werkelijk tot nu',
     'summary.remaining': 'Nog verwacht',
     'summary.total': 'Verwacht totaal',
+    'summary.costHourly': 'HA-uurstatistieken: lopende uur kan ontbreken; dagtotaal blijft een schatting.',
     'summary.costIncomplete': 'Werkelijke kosten ontbreken: controleer de vier Home Assistant kosten- en vergoedingssensoren en hun historie rond middernacht.',
     'summary.partial': 'Gedeeltelijke voorspelling',
     'live.statusAria': 'Actuele vermogens',
@@ -101,7 +103,7 @@ export const messages = {
     'section.interact': 'Beweeg over een grafiek of selecteer een kwartier voor de exacte waarden.',
     'selection.quarter': 'GESELECTEERD KWARTIER',
     'sidebar.readonly': 'Onafhankelijke, alleen-lezen viewer',
-    'sidebar.version': 'v0.3.3 · geen invloed op EMHASS',
+    'sidebar.version': 'v0.3.4 · geen invloed op EMHASS',
     'status.ageMinutes': '{minutes} min geleden',
     'status.ageUnknown': 'leeftijd onbekend',
     'status.checkConnection': 'Controleer EMHASS_URL en de add-on bereikbaarheid',
@@ -147,9 +149,11 @@ export const messages = {
     'validate.timestampMismatch': 'Laatste run en plan hebben verschillende generatietijden.',
   },
   en: {
+    'summary.actualCost': 'Actual (HA, hourly)',
     'summary.actual': 'Actual so far',
     'summary.remaining': 'Remaining forecast',
     'summary.total': 'Expected total',
+    'summary.costHourly': 'HA hourly statistics: the current hour may be missing; daily total is an estimate.',
     'summary.costIncomplete': 'Actual costs unavailable: check the four Home Assistant cost/compensation sensors and their midnight history.',
     'summary.partial': 'Partial forecast',
     'live.statusAria': 'Live power status',
@@ -247,7 +251,7 @@ export const messages = {
     'section.interact': 'Hover over a chart or select a quarter-hour to see exact values.',
     'selection.quarter': 'SELECTED QUARTER-HOUR',
     'sidebar.readonly': 'Independent, read-only viewer',
-    'sidebar.version': 'v0.3.3 · does not affect EMHASS',
+    'sidebar.version': 'v0.3.4 · does not affect EMHASS',
     'status.ageMinutes': '{minutes} min ago',
     'status.ageUnknown': 'age unknown',
     'status.checkConnection': 'Check the EMHASS URL and add-on connectivity',

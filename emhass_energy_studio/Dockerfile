@@ -1,7 +1,7 @@
 FROM node:22-alpine
 
 ARG BUILD_ARCH
-ARG BUILD_VERSION="0.3.3"
+ARG BUILD_VERSION="0.3.4"
 LABEL io.hass.type="app" \
       io.hass.version="${BUILD_VERSION}" \
       io.hass.arch="${BUILD_ARCH}"
