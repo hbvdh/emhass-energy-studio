@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.3 — Plan states from Predbat itself
+
+- Read the raw `state` values in `predbat.plan_html` to match Predbat's official plan table.
+- Group consecutive HoldChrg, Chrg, Demand, freeze, and export states by their original plan times.
+- Correct first active slot alignment; do not confuse forecasts from battery power with control states.
+- Return compact validated plan rows only, without forwarding HTML or the full raw data.
+- Keep the frontend read-only; no changes to Predbat control or EMHASS Energy Studio.
+
+
 ## 0.1.2 — Upcoming Predbat battery windows
 
 - Read the full date from Predbat `attributes.timestamp` instead of interpreting time-only start/end states as dates.

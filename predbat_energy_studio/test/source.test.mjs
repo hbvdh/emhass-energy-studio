@@ -55,7 +55,7 @@ test('adapter uses only GET for fixed paths and caches reads',async()=>{
  };
  const now=new Date('2026-10-22T10:00:00Z');const read=createReader({token:'secret',fetchImpl,clock:()=>now});
  const a=await read(),b=await read();assert.equal(a,b);assert.equal(a.status,'ok');
- assert.equal(calls.length,new Set(Object.values(entities)).size);
+ assert.equal(calls.length,new Set([...Object.values(entities),'predbat.plan_html']).size);
  assert(calls.every(c=>c.url.startsWith('http://supervisor/core/api/states/')&&!c.url.includes('?')));
  assert(calls.every(c=>c.options.headers.Authorization==='Bearer secret'));
  assert(calls.every(c=>c.options.method===undefined));

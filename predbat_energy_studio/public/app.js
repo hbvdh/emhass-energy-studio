@@ -1,5 +1,5 @@
 import {strings,getLanguage} from './i18n.js';
-import {upcomingPredbatWindows} from './schedule.js';
+import {groupPredbatPlan} from './plan.js';
 import {formatEuroMetric} from './money.js';
 const $=id=>document.getElementById(id);
 const state={data:null,locale:'en',horizon:24,series:'soc',page:0,demo:false,loading:false};
@@ -151,18 +151,18 @@ function renderTable(){
 }
 function renderSchedule(){
  const out=$('schedule');out.replaceChildren();
- const windows=upcomingPredbatWindows({scalar:state.data?.scalar,series:state.data?.series,now:new Date(),horizonHours:state.horizon,maxWindows:5});
+ const windows=groupPredbatPlan(state.data?.plan_rows,{now:new Date(),horizonHours:state.horizon,maxWindows:8});
  for(const w of windows){
   const row=document.createElement('div');row.className='action-row';
   const group=document.createElement('div'),title=document.createElement('strong'),detail=document.createElement('small');
-  const type=w.source==='forced'?(w.kind==='charge'?'windowCharge':'windowExport'):(w.kind==='charge'?'windowForecastCharge':'windowForecastDischarge');
-  title.textContent=t(type);
-  detail.textContent=`${t(w.source==='forced'?'windowSourceForced':'windowSourceForecast')} · ${t('from')} ${stamp(w.start)} · ${t('to')} ${stamp(w.end)}`;
+  title.textContent=t('plan_'+w.state.replace('/','_'));
+  const start=clock(w.start),end=w.end?clock(w.end):'…';
+  detail.textContent=`${start} – ${end}${w.end && w.start.toDateString()!==w.end.toDateString() ? ' ('+stamp(w.end)+')' : ''}`;
   group.append(title,detail);
-  const mark=document.createElement('span');mark.textContent=w.kind==='charge'?'↙':'↗';
+  const mark=document.createElement('span');mark.textContent=w.state==='Demand'?'→':w.state.includes('Chrg')?'↙':'↗';
   row.append(group,mark);out.append(row);
  }
- if(!windows.length){const message=document.createElement('p');message.className='muted';message.textContent=t('windowMissing');out.append(message);}
+ if(!windows.length){const msg=document.createElement('p');msg.className='muted';msg.textContent=t('planMissing');out.append(msg);}
 }
 function renderHealth(){const out=$('health-lines');out.replaceChildren();
  const d=state.data;const checks=[

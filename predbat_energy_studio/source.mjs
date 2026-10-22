@@ -1,4 +1,5 @@
 // Fixed, read-only Home Assistant Predbat data adapter. No arbitrary entity proxy.
+import {projectPredbatPlan} from './public/plan.js';
 export const FIELDS = Object.freeze({
  status:'status', active:'', soc_now:'soc_kw_h0', soc_best:'soc_kw_best', soc_base:'soc_kw',
  battery:'battery_power', battery_best:'battery_power_best', grid:'grid_power', grid_best:'grid_power_best',
@@ -65,7 +66,7 @@ export function normalizeStates(states,entities,clock=new Date()) {
  return {source:'home_assistant',status:available?'ok':'unavailable',observed_at:clock.toISOString(),
   prefix:entities.status?.split('.')[0]||'predbat', version,run_state:runState,
   capacity_kwh:capacity, soc_percent:percent===null?null:Math.max(0,Math.min(100,percent)),
-  estimated_saving:saved, scalar, series,
+  estimated_saving:saved, scalar, series, plan_rows:projectPredbatPlan(states[`${entities.status?.split('.')[0]||'predbat'}.plan_html`]),
   missing:Object.entries(entities).filter(([key,id])=>!states[id]&&key!=='battery_soc_percent').map(([key])=>key),
  };
 }
@@ -76,13 +77,16 @@ export function createReader({token,base='http://supervisor/core/api',prefix='pr
   try{
    const response=await fetchImpl(`${api}/states/${encodeURIComponent(id)}`,{headers:{Authorization:`Bearer ${token}`,Accept:'application/json'},signal:AbortSignal.timeout(8000)});
    if(!response.ok)return null;
-   const raw=await response.text();if(raw.length>150000) return null;
+   const cap=id.endsWith('.plan_html')?5_000_000:150000;
+   if(Number(response.headers?.get?.('content-length'))>cap)return null;
+   const raw=await response.text();if(raw.length>cap) return null;
    const record=JSON.parse(raw);return record?.entity_id===id?record:null;
   }catch{return null;}
  }
  async function collect(){
   if(!token)return {status:'unavailable',reason:'Home Assistant Supervisor token unavailable'};
-  const ids=[...new Set(Object.values(entities))];const results={};
+  const planId=`${prefix}.plan_html`;
+  const ids=[...new Set(Object.values(entities)),planId];const results={};
   // Limit concurrent requests to avoid flooding Home Assistant.
   for(let k=0;k<ids.length;k+=6){
    await Promise.all(ids.slice(k,k+6).map(async id=>{const state=await fetchState(id);if(state)results[id]=state;}));
