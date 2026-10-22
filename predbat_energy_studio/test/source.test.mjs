@@ -38,6 +38,12 @@ test('normalization calculates SoC and comparable savings, never guesses missing
  rows[entities.base_metric].attributes.unit_of_measurement='€';
  assert.equal(normalizeStates(rows,entities).estimated_saving,null);
 });
+test('Predbat full timestamp attribute is retained for date windows',()=>{
+ const r={[entities.best_charge_start]:record(entities.best_charge_start,'12:45:00','',{timestamp:'2026-10-22 12:45:00'})};
+ const d=normalizeStates(r,entities,new Date('2026-10-22T10:00:00Z'));
+ assert.equal(d.scalar.best_charge_start.text,'12:45:00');
+ assert.equal(d.scalar.best_charge_start.timestamp,'2026-10-22 12:45:00');
+});
 test('unavailable sensors do not become zero or fake savings',()=>{
  const data=normalizeStates({},entities);assert.equal(data.status,'unavailable');assert.equal(data.estimated_saving,null);
  assert.equal(data.soc_percent,null);assert.equal(data.scalar.best_metric,null);

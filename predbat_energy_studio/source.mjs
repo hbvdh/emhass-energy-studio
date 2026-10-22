@@ -41,6 +41,7 @@ function summary(record){
   value:finiteNumber(record.state),
   text: typeof record.state==='string'?record.state.slice(0,220):String(record.state??''),
   unit:typeof attr.unit_of_measurement==='string'?attr.unit_of_measurement.slice(0,20):'',
+  timestamp:typeof attr.timestamp==='string'?attr.timestamp.slice(0,64):null,
   updated:record.last_updated||record.last_changed||null,
  };
 }

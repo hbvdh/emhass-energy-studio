@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2 — Upcoming Predbat battery windows
+
+- Read the full date from Predbat `attributes.timestamp` instead of interpreting time-only start/end states as dates.
+- Show upcoming forced charging/export windows, and Best-plan predicted charge/discharge periods where no forced windows are published.
+- Clearly distinguish predictions from control commands; ignore brief power fluctuations and avoid duplicate windows.
+- Add time-window, parsing and packaging regression checks.
+
+
 ## 0.1.1 — Euro prices and compact header
 
 - Convert Predbat cent metrics into EUR with two decimal places (`448.2 c` → `€ 4,48`).

@@ -1,4 +1,5 @@
 import {strings,getLanguage} from './i18n.js';
+import {upcomingPredbatWindows} from './schedule.js';
 import {formatEuroMetric} from './money.js';
 const $=id=>document.getElementById(id);
 const state={data:null,locale:'en',horizon:24,series:'soc',page:0,demo:false,loading:false};
@@ -149,12 +150,19 @@ function renderTable(){
  $('prev').disabled=state.page===0;$('next').disabled=state.page>=totalPages-1;$('download').disabled=!rows.length;
 }
 function renderSchedule(){
- const out=$('schedule');out.replaceChildren();let found=0;
- const windows=[['best_charge_start','best_charge_end','windowCharge'],['best_export_start','best_export_end','windowExport']];
- for(const [start,end,name] of windows){const a=toDate(s(start)?.text),b=toDate(s(end)?.text);if(!a||!b||b.getTime()<Date.now()||a.getTime()>Date.now()+48*3600000)continue;
-  const row=document.createElement('div');row.className='action-row';const group=document.createElement('div'),title=document.createElement('strong');title.textContent=t(name);const detail=document.createElement('small');detail.textContent=`${t('from')} ${stamp(a)} · ${t('to')} ${stamp(b)}`;group.append(title,detail);const mark=document.createElement('span');mark.textContent=name==='windowCharge'?'↙':'↗';row.append(group,mark);out.append(row);found++;
+ const out=$('schedule');out.replaceChildren();
+ const windows=upcomingPredbatWindows({scalar:state.data?.scalar,series:state.data?.series,now:new Date(),horizonHours:state.horizon,maxWindows:5});
+ for(const w of windows){
+  const row=document.createElement('div');row.className='action-row';
+  const group=document.createElement('div'),title=document.createElement('strong'),detail=document.createElement('small');
+  const type=w.source==='forced'?(w.kind==='charge'?'windowCharge':'windowExport'):(w.kind==='charge'?'windowForecastCharge':'windowForecastDischarge');
+  title.textContent=t(type);
+  detail.textContent=`${t(w.source==='forced'?'windowSourceForced':'windowSourceForecast')} · ${t('from')} ${stamp(w.start)} · ${t('to')} ${stamp(w.end)}`;
+  group.append(title,detail);
+  const mark=document.createElement('span');mark.textContent=w.kind==='charge'?'↙':'↗';
+  row.append(group,mark);out.append(row);
  }
- if(!found){const p=document.createElement('p');p.className='muted';p.textContent=t('windowMissing');out.append(p);}
+ if(!windows.length){const message=document.createElement('p');message.className='muted';message.textContent=t('windowMissing');out.append(message);}
 }
 function renderHealth(){const out=$('health-lines');out.replaceChildren();
  const d=state.data;const checks=[
