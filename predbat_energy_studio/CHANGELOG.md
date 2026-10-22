@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4 — Match Predbat's visible, merged plan states
+
+- Honor `skip_state_cell` when Predbat merges multiple slots using `rowspan_state`.
+- Keep the visible Predbat status through hidden rows, avoiding false Holding Charging breaks inside a continuous charge window.
+- Add tests for the reported 11:30–14:30 scenario and genuinely distinct state changes.
+- No changes to Predbat controls or EMHASS Energy Studio.
+
+
 ## 0.1.3 — Plan states from Predbat itself
 
 - Read the raw `state` values in `predbat.plan_html` to match Predbat's official plan table.

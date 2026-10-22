@@ -8,4 +8,4 @@ const language=['auto','nl','en'].includes(cfg.language)?cfg.language:'auto';
 // Drop root before accepting any user traffic. Supervisor token remains in env, never returned.
 if(process.getuid?.()===0){process.setgid(1000);process.setuid(1000);}
 startServer({hostname:'0.0.0.0',listenPort:8099,prefix,socEntity,language,ingressOnly:true});
-console.log('Predbat Energy Studio v0.1.3 - read-only Ingress started');
+console.log('Predbat Energy Studio v0.1.4 - read-only Ingress started');

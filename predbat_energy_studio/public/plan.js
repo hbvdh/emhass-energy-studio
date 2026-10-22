@@ -12,9 +12,17 @@ export function projectPredbatPlan(record) {
   if (!raw || !Array.isArray(raw.rows)) return [];
   const midnight=parsedDate(raw.time);
   const plan=[];
+  // Predbat renders consecutive rows as one state cell via rowspan_state.
+  // Rows with skip_state_cell are hidden by that merged cell; their raw
+  // 'state' may differ, but the visible plan continues the previous state.
+  let visibleState=null;
   for(const row of raw.rows.slice(0,600)) {
     const date=parsedDate(row?.time);
-    if (!date || !PLAN_STATES.has(row?.state)) continue;
+    if (!date) continue;
+    const hidden=row.skip_state_cell===true;
+    const displayState=hidden && visibleState ? visibleState : row.state;
+    if (!PLAN_STATES.has(displayState)) continue;
+    if (!hidden) visibleState=displayState;
     let start=date;
     // Predbat renders the first active row as the current minute, but its slot
     // began at the original slot_minute. Preserve that boundary when plausible.
@@ -23,7 +31,7 @@ export function projectPredbatPlan(record) {
       const drift=date-aligned;
       if (drift>=0 && drift<30*60000) start=aligned;
     }
-    plan.push({time:start.toISOString(),state:row.state});
+    plan.push({time:start.toISOString(),state:displayState});
   }
   return plan;
 }
