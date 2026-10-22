@@ -1,0 +1,26 @@
+name: Predbat Energy Studio
+version: "0.1.0"
+slug: predbat_energy_studio
+description: Modern, read-only Predbat planning and energy dashboard
+url: https://github.com/hbvdh/emhass-energy-studio
+arch:
+  - amd64
+  - aarch64
+init: false
+startup: application
+boot: auto
+homeassistant_api: true
+ingress: true
+ingress_port: 8099
+ingress_entry: /
+panel_icon: mdi:battery-clock-outline
+panel_title: Predbat Studio
+panel_admin: true
+options:
+  predbat_prefix: predbat
+  battery_soc_entity: ""
+  language: auto
+schema:
+  predbat_prefix: str
+  battery_soc_entity: "str?"
+  language: list(auto|en|nl)

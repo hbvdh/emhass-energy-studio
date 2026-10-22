@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {strings,getLanguage} from '../public/i18n.js';
+test('two complete languages',()=>{assert.deepEqual(Object.keys(strings.en).sort(),Object.keys(strings.nl).sort());for(const x of Object.values(strings))for(const value of Object.values(x))assert.ok(value.length);});
+test('language preference overrides browser and auto uses browser',()=>{assert.equal(getLanguage('nl','en-US'),'nl');assert.equal(getLanguage('en','nl-NL'),'en');assert.equal(getLanguage('auto','nl-NL'),'nl');assert.equal(getLanguage('auto','fr-FR'),'en');});
