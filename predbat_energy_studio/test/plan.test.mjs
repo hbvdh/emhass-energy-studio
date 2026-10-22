@@ -63,6 +63,21 @@ test('without rowspans distinct raw state transitions remain visible',()=>{
  const plan=projectPredbatPlan({attributes:{raw:{time:midnight,rows:rawRows}}});
  assert.deepEqual(plan.map(x=>x.state),['Chrg','HoldChrg','Demand']);
 });
+test('official Predbat plan rows preserve slot tariffs, SOC and costs',()=>{
+ const rows=[{time:dateFor('12:15'),slot_minute:735,state:'Chrg',import_rate:22.83,
+   export_rate:7.05,pv_forecast:0.33,load_forecast:0.14,soc_percent:49,
+   show_limit:'57',cost_change:0.22,total_cost:2.73}];
+ const projected=projectPredbatPlan({attributes:{raw:{time:midnight,rows}}});
+ assert.equal(projected.length,1);
+ assert.deepEqual(projected.map(r=>[r.import_rate_c,r.export_rate_c,r.soc_percent,
+   r.limit_percent,r.pv_kwh,r.load_kwh,r.slot_cost_eur,r.total_cost_eur]),
+   [[22.83,7.05,49,'57',0.33,0.14,0.22,2.73]]);
+});
+test('absent Predbat tariffs or costs are null, never a falsely free slot',()=>{
+ const projected=projectPredbatPlan({attributes:{raw:{time:midnight,rows:[{time:dateFor('12:15'),state:'Demand'}]}}});
+ assert.equal(projected[0].import_rate_c,null);
+ assert.equal(projected[0].slot_cost_eur,null);
+});
 test('only fixed Home Assistant state paths are fetched; plan HTML is never sent to clients',async()=>{
  const allowed=new Set(Object.values(resolveEntities()));
  const requests=[];

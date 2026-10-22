@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.5 — Quarter-hour plan, prices and charts
+
+- Rebuild the table from Predbat's authoritative plan_html.raw rows, not sparse five-minute power samples.
+- Show original charging/hold/demand state, import and export rates converted from cents to €/kWh, battery SOC, PV/load energy, slot cost and total cost.
+- Add separate consumption/solar/grid, battery power and dynamic import/export price charts in the EMHASS Studio style.
+- Export the same planning table to CSV and adapt labels for Dutch and English.
+- Do not invent missing measurements or modify Predbat controls.
+
+
 ## 0.1.4 — Match Predbat's visible, merged plan states
 
 - Honor `skip_state_cell` when Predbat merges multiple slots using `rowspan_state`.

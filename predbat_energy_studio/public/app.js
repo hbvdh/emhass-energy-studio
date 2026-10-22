@@ -1,5 +1,6 @@
 import {strings,getLanguage} from './i18n.js';
 import {groupPredbatPlan} from './plan.js';
+import {renderSmallChart} from './mini_charts.js';
 import {formatEuroMetric} from './money.js';
 const $=id=>document.getElementById(id);
 const state={data:null,locale:'en',horizon:24,series:'soc',page:0,demo:false,loading:false};
@@ -134,20 +135,42 @@ function renderGraph(){
  hit.addEventListener('pointerleave',()=>{if(window.matchMedia('(hover: hover)').matches){$('graph-tooltip').hidden=true;line.setAttribute('opacity','0');dot.setAttribute('opacity','0');}});
 }
 function slots(){
- const keys=['soc_best','soc_base','battery_best','grid_best','pv_best'];return joinPoints(keys);
+ const now=Date.now(),until=now+state.horizon*3600000;
+ return (state.data?.plan_rows||[]).map(r=>({...r,date:toDate(r.time)}))
+   .filter(r=>r.date && r.date.getTime()>=now-35*60000 && r.date.getTime()<=until)
+   .sort((a,b)=>a.date-b.date);
 }
-function toSlotDirection(value){return numeric(value)===null?['unknown','']:value<-.06?['charge','charge']:value>.06?['discharge','discharge']:['hold',''];}
+const slotRate=value=>numeric(value)===null?'—':formatEuroMetric(value,'c');
+const slotEuro=value=>numeric(value)===null?'—':formatEuroMetric(value,'EUR');
+const slotNum=value=>numeric(value)===null?'—':num(value,2);
 function renderTable(){
- const rows=slots(),totalPages=Math.max(1,Math.ceil(rows.length/PAGE_SIZE));state.page=Math.min(state.page,totalPages-1);
- const tbody=$('rows');tbody.replaceChildren();const shown=rows.slice(state.page*PAGE_SIZE,(state.page+1)*PAGE_SIZE);
- for(const r of shown){const tr=document.createElement('tr');
-  const cols=[stamp(r.date),fmtKwh(r.soc_best),fmtKwh(r.soc_base),fmtPower(r.battery_best),fmtPower(r.grid_best),fmtPower(r.pv_best)];
-  cols.forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.append(td)});
-  const direction=toSlotDirection(r.battery_best),td=document.createElement('td'),pill=document.createElement('span');pill.className='trend '+direction[1];pill.textContent=t(direction[0]);td.append(pill);tr.append(td);tbody.append(tr);
+ const data=slots(),pages=Math.max(1,Math.ceil(data.length/PAGE_SIZE));state.page=Math.min(state.page,pages-1);
+ const shown=data.slice(state.page*PAGE_SIZE,(state.page+1)*PAGE_SIZE);
+ const body=$('rows');body.replaceChildren();
+ for(const r of shown){
+  const tr=document.createElement('tr');
+  const values=[
+   stamp(r.date),
+   t('plan_'+r.state.replace('/','_')),
+   slotRate(r.import_rate_c),slotRate(r.export_rate_c),
+   r.limit_percent||'—',
+   numeric(r.soc_percent)===null?'—':num(r.soc_percent,0)+' %',
+   numeric(r.pv_kwh)===null?'—':num(r.pv_kwh,2)+' kWh',
+   numeric(r.load_kwh)===null?'—':num(r.load_kwh,2)+' kWh',
+   slotEuro(r.slot_cost_eur),slotEuro(r.total_cost_eur)
+  ];
+  values.forEach((v,i)=>{
+   const td=document.createElement('td');
+   if(i===1){const pill=document.createElement('span');pill.className='trend '+(r.state==='Demand'?'':r.state.includes('Chrg')?'charge':'discharge');pill.textContent=v;td.append(pill);}
+   else td.textContent=v;
+   tr.append(td);
+  });
+  body.append(tr);
  }
- if(!shown.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.className='empty-row';td.textContent=t('noRows');tr.append(td);tbody.append(tr);}
- text('table-count',`${rows.length} ${t('records')}`);text('page',`${state.page+1} / ${totalPages}`);
- $('prev').disabled=state.page===0;$('next').disabled=state.page>=totalPages-1;$('download').disabled=!rows.length;
+ if(!shown.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=10;td.className='empty-row';td.textContent=t('planMissing');tr.append(td);body.append(tr);}
+ text('table-count',`${data.length} ${t('records')}`);
+ text('page',`${state.page+1} / ${pages}`);
+ $('prev').disabled=state.page===0;$('next').disabled=state.page>=pages-1;$('download').disabled=!data.length;
 }
 function renderSchedule(){
  const out=$('schedule');out.replaceChildren();
@@ -172,7 +195,26 @@ function renderHealth(){const out=$('health-lines');out.replaceChildren();
   [t('version'),d?.version||'—']];
  for(const [name,value] of checks){const row=document.createElement('div');row.className='health-row';const col=document.createElement('div');const label=document.createElement('small');label.textContent=name;const strong=document.createElement('strong');strong.textContent=value;col.append(label,strong);row.append(col);out.append(row);}
 }
-function render(){if(!state.data)return;renderStatus();renderGraph();renderSchedule();renderHealth();renderTable();}
+function renderMiniCharts(){
+ const now=new Date(),hours=state.horizon;
+ const mapped=key=>(state.data?.series?.[key]||[]).map(point=>({time:point.time,value:point.value}));
+ const prices=(state.data?.plan_rows||[]);
+ const rate=key=>prices.filter(r=>numeric(r[key])!==null).map(r=>({time:r.time,value:r[key]/100}));
+ const opts={now,hours,locale:state.locale,noData:t('noData')};
+ renderSmallChart($('chart-flows'),$('chart-flows-tip'),[
+  {name:t('chartConsumption'),color:'#a58fff',points:mapped('load_best')},
+  {name:t('solarTab'),color:'#55dfcb',points:mapped('pv_best')},
+  {name:t('chartGrid'),color:'#ffbc68',points:mapped('grid_best')}
+ ],{...opts,unit:'kW'});
+ renderSmallChart($('chart-battery-power'),$('chart-battery-power-tip'),[
+  {name:t('batteryTab'),color:'#a58fff',points:mapped('battery_best')}
+ ],{...opts,unit:'kW'});
+ renderSmallChart($('chart-prices'),$('chart-prices-tip'),[
+  {name:t('priceImport'),color:'#ffbc68',points:rate('import_rate_c')},
+  {name:t('priceExport'),color:'#83adff',points:rate('export_rate_c')}
+ ],{...opts,unit:'€/kWh',stepped:true});
+}
+function render(){if(!state.data)return;renderStatus();renderGraph();renderMiniCharts();renderSchedule();renderHealth();renderTable();}
 function demoData(){
  const now=new Date(),base=new Date(Math.floor(now.getTime()/300000)*300000),cap=15;
  const keys=['soc_best','soc_base','battery_best','grid_best','pv_best','load_best','best_metric','base_metric'];const series=Object.fromEntries(keys.map(k=>[k,[]]));
@@ -186,10 +228,17 @@ function demoData(){
  }
  const data={status:'ok',source:'demo',version:'demo',run_state:'Charging',observed_at:now.toISOString(),soc_percent:67,capacity_kwh:cap,estimated_saving:22,scalar:{status:{text:'Charging',value:null},soc_now:{value:10.05,unit:'kWh'},best_metric:{value:135,unit:'ct'},base_metric:{value:157,unit:'ct'},cost_today:{value:72,unit:'ct'},battery:{value:-3800,unit:'W'},grid:{value:-1750,unit:'W'},pv:{value:2150,unit:'W'},load:{value:900,unit:'W'}},series,missing:[]};return data;
 }
-function downloadCsv(){const data=slots();if(!data.length)return;
- const header=['timestamp','soc_best_kwh','soc_base_kwh','battery_best_kw','grid_best_kw','pv_best_kw'];
- const content=[header.join(','),...data.map(r=>[r.date.toISOString(),r.soc_best,r.soc_base,r.battery_best,r.grid_best,r.pv_best].map(v=>v??'').join(','))].join('\r\n');
- const blob=new Blob([content],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='predbat-studio-forecast.csv';a.click();URL.revokeObjectURL(url);
+function downloadCsv(){
+ const data=slots();if(!data.length)return;
+ const header=['timestamp','predbat_state','import_eur_kwh','export_eur_kwh','charge_limit_percent','soc_percent','pv_kwh','load_kwh','slot_cost_eur','total_cost_eur'];
+ const csv=[header,...data.map(r=>[
+  r.date.toISOString(),r.state,r.import_rate_c===null?'':r.import_rate_c/100,
+  r.export_rate_c===null?'':r.export_rate_c/100,r.limit_percent??'',
+  r.soc_percent??'',r.pv_kwh??'',r.load_kwh??'',r.slot_cost_eur??'',r.total_cost_eur??''
+ ])].map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='predbat-studio-plan.csv';a.click();URL.revokeObjectURL(url);
 }
 async function reload(){
  if(state.loading)return;state.loading=true;$('refresh').disabled=true;

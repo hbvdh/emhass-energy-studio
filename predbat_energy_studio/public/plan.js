@@ -31,7 +31,18 @@ export function projectPredbatPlan(record) {
       const drift=date-aligned;
       if (drift>=0 && drift<30*60000) start=aligned;
     }
-    plan.push({time:start.toISOString(),state:displayState});
+    // Predbat publishes import/export rates in cents per kWh. Slot costs
+    // and running totals are already in the configured currency (EUR here).
+    // Keep missing values null; never imply a zero-price tariff.
+    const number=value=>typeof value==='number' && Number.isFinite(value)?value:null;
+    const limit=typeof row.show_limit==='string'?row.show_limit.replace(/<[^>]*>/g,'').slice(0,32):null;
+    plan.push({
+      time:start.toISOString(),state:displayState,
+      import_rate_c:number(row.import_rate),export_rate_c:number(row.export_rate),
+      pv_kwh:number(row.pv_forecast),load_kwh:number(row.load_forecast),
+      soc_percent:number(row.soc_percent),limit_percent:limit,
+      slot_cost_eur:number(row.cost_change),total_cost_eur:number(row.total_cost),
+    });
   }
   return plan;
 }
