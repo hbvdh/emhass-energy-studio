@@ -21,6 +21,6 @@ test('packaged Docker COPY includes the full Node module graph',()=>{
 });
 test('manifest is an independent Home Assistant add-on',()=>{
  const conf=readFileSync(join(root,'config.yaml'),'utf8'),docker=readFileSync(join(root,'Dockerfile'),'utf8');
- assert.match(conf,/slug: predbat_energy_studio/);assert.match(conf,/version: "0\.1\.0"/);
+ assert.match(conf,/slug: predbat_energy_studio/);assert.match(conf,/version: "0\.1\.1"/);
  assert.match(conf,/homeassistant_api: true/);assert.match(conf,/ingress: true/);assert.match(docker,/source\.mjs/);
 });

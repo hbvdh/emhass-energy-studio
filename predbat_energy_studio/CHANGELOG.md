@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 — Euro prices and compact header
+
+- Convert Predbat cent metrics into EUR with two decimal places (`448.2 c` → `€ 4,48`).
+- Apply the same formatting to Best, Base, Predbat cost today, and predicted benefit, including signed values.
+- Remove the large introduction headline and description; keep the edition label and action buttons.
+- Add regression tests for money units and compact layout.
+
 ## 0.1.0 — Initial standalone dashboard
 
 - Separate Home Assistant Ingress app installed alongside EMHASS Energy Studio.

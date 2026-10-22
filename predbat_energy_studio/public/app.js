@@ -1,4 +1,5 @@
 import {strings,getLanguage} from './i18n.js';
+import {formatEuroMetric} from './money.js';
 const $=id=>document.getElementById(id);
 const state={data:null,locale:'en',horizon:24,series:'soc',page:0,demo:false,loading:false};
 const PAGE_SIZE=28;
@@ -12,8 +13,9 @@ const fmtPower=value=>numeric(value)===null?'—':`${num(value,2)} kW`;
 const fmtKwh=value=>numeric(value)===null?'—':`${num(value,2)} kWh`;
 function fmtMetric(value,unit){
  if(numeric(value)===null)return '—';
+ const euro=formatEuroMetric(value,unit);
+ if(euro!==null)return euro;
  const u=String(unit||'').trim();
- if(['c','ct','¢','p','pence','cent','cents'].includes(u.toLowerCase())) return `${num(value,1)} ${u||'ct'}`;
  return `${num(value,2)}${u?' '+u:''}`;
 }
 const fm=(key)=>fmtMetric(val(key),s(key)?.unit);
